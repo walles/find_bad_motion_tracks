@@ -42,7 +42,29 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         # FIXME: Return true if we have any tracks, this method is a duplicate!
         return True
 
-    def execute(self, context):
+    def execute(self, context: bpy.context):
+        clip: bpy.types.MovieClip = context.area.spaces.active.clip
+
+        # FIXME: For each clip frame except the first...
+        first_frame_index = clip.frame_start
+        last_frame_index = clip.frame_start + clip.frame_duration - 1
+        print(f"Clip goes from frame {first_frame_index} to {last_frame_index}")
+
+        # FIXME: For each track...
+
+        # FIXME: How much did this track move X and Y since the previous frame?
+
+        # FIXME: Take the median of all movements between previous and this
+        # frame, for X and Y independently.
+
+        # FIXME: For each track, figure out how much this track moved compared
+        # to the median, on X and Y independently.
+
+        # FIXME: For each track, keep track of the largest difference vs the
+        # median so far, for X and Y independently.
+
+        # FIXME: Print all track names to the console, sorted by
+        # max(xdifference, ydifference) for each track.
         print("Johan")
         return {"FINISHED"}
 
