@@ -13,6 +13,8 @@
 
 import bpy
 
+from typing import cast
+
 bl_info = {
     "name": "Find Bad Tracks",
     "author": "Johan Walles",
@@ -42,8 +44,10 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         # FIXME: Return true if we have any tracks, this method is a duplicate!
         return True
 
-    def execute(self, context: bpy.context):
-        clip: bpy.types.MovieClip = context.area.spaces.active.clip
+    def execute(self, context: bpy.types.Context):
+        spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
+        active = cast(bpy.types.SpaceClipEditor, spaces.active)
+        clip = active.clip
 
         # For each clip frame except the first...
         first_frame_index = clip.frame_start
