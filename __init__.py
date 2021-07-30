@@ -14,55 +14,64 @@
 import bpy
 
 bl_info = {
-    "name": "Find Bad Motion Tracks",
+    "name": "Find Bad Tracks",
     "author": "Johan Walles",
     "description": "",
     "blender": (2, 93, 1),
     "version": (0, 0, 1),
-    # FIXME: Put this under Tracks
-    "location": "Clip Editor > Tools > Solve > Find Bad Tracks",
+    "location": "Clip Editor > Tools > Track > Find Bad Tracks",
     "warning": "",
-    # FIXME: What should this be?
-    "category": "Tools",
+    "category": "Video Tools",
 }
+
+FIND_BAD_TRACKS = "Find Bad Tracks"
 
 
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
-    """Reset track weight and solve camera motion"""
+    """
+    FIXME: Long comment here
+    """
 
     bl_idname = "tracking.find_bad_tracks"
-    bl_label = "Find bad motion tracks"
+    bl_label = FIND_BAD_TRACKS
 
     @classmethod
     def poll(cls, context):
         # FIXME: Return true if we have any tracks, this method is a duplicate!
-        return context.area.spaces.active.clip is not None
+        return True
 
     def execute(self, context):
         print("Johan")
         return {"FINISHED"}
 
 
-class FindBadTracksPanel(bpy.types.Panel):
-    bl_label = "Find bad motion tracks"
-    bl_space_type = "CLIP_EDITOR"  # FIXME: What should this be?
-    bl_region_type = "TOOLS"  # FIXME: What should this be?
-    bl_category = "Solve"  # FIXME: What should this be?
+class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
+    bl_label = FIND_BAD_TRACKS
+    bl_space_type = "CLIP_EDITOR"
+    bl_region_type = "TOOLS"
+    bl_category = "Track"
 
     @classmethod
     def poll(cls, context):
         # FIXME: Return true if we have any tracks, this method is a duplicate!
-        return context.area.spaces.active.clip is not None
+        return True
 
     def draw(self, context):
         # FIXME: Make sure this looks OK
         layout = self.layout
         box = layout.box()
+
+        row = box.row(align=True)
+        row.label(FIND_BAD_TRACKS)
+
         row = box.row(align=True)
         row.operator("tracking.find_bad_tracks")
 
 
-classes = (OP_Tracking_find_bad_tracks,)
+classes = (
+    OP_Tracking_find_bad_tracks,
+    TRACKING_PT_FindBadTracksPanel,
+)
 register, unregister = bpy.utils.register_classes_factory(classes)
 
 
