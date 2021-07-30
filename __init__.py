@@ -27,7 +27,7 @@ bl_info = {
 }
 
 
-class OP_Tracking_reset_solution(bpy.types.Operator):
+class OP_Tracking_find_bad_tracks(bpy.types.Operator):
     """Reset track weight and solve camera motion"""
 
     bl_idname = "tracking.find_bad_tracks"
@@ -62,12 +62,8 @@ class FindBadTracksPanel(bpy.types.Panel):
         row.operator("tracking.find_bad_tracks")
 
 
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
+classes = (OP_Tracking_find_bad_tracks,)
+register, unregister = bpy.utils.register_classes_factory(classes)
 
 
 if __name__ == "__main__":
