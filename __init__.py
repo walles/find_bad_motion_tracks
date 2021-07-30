@@ -13,7 +13,9 @@
 
 import bpy
 
-from typing import cast
+from typing import cast, List
+
+from bpy.types import MovieTrackingTrack
 
 bl_info = {
     "name": "Find Bad Tracks",
@@ -55,8 +57,11 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         print(f"Clip goes from frame {first_frame_index} to {last_frame_index}")
         for frame_index in range(first_frame_index + 1, last_frame_index):
             # FIXME: For each track...
+            tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
+            for track in tracks:
+                pass  # print(f"Track ${track.name}")
 
-            # FIXME: How much did this track move X and Y since the previous frame?
+                # FIXME: How much did this track move X and Y since the previous frame?
 
             # FIXME: Take the median of all movements between previous and this
             # frame, for X and Y independently.
