@@ -29,7 +29,9 @@ FIND_BAD_TRACKS = "Find Bad Tracks"
 
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
     """
-    FIXME: Long comment here
+    FIXME: Long comment here, this text appears in the Blender UI.
+
+    It shows up when hovering the button for this operation.
     """
 
     bl_idname = "tracking.find_bad_tracks"
@@ -57,14 +59,10 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
         return True
 
     def draw(self, context):
-        # FIXME: Make sure this looks OK
         layout = self.layout
-        box = layout.box()
 
-        row = box.row(align=True)
-        row.label(FIND_BAD_TRACKS)
-
-        row = box.row(align=True)
+        col = layout.column(align=True)
+        row = col.row(align=True)
         row.operator("tracking.find_bad_tracks")
 
 
