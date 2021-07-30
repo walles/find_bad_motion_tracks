@@ -12,10 +12,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import bpy
+import statistics
 
 from typing import cast, List
 
-from bpy.types import MovieTrackingTrack
+from bpy.types import MovieTrackingMarkers, MovieTrackingTrack
 
 bl_info = {
     "name": "Find Bad Tracks",
@@ -56,15 +57,40 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         last_frame_index = clip.frame_start + clip.frame_duration - 1
         print(f"Clip goes from frame {first_frame_index} to {last_frame_index}")
         for frame_index in range(first_frame_index + 1, last_frame_index):
-            # FIXME: For each track...
+            dx_list: List[float] = []
+            dy_list: List[float] = []
+
             tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
             for track in tracks:
-                pass  # print(f"Track ${track.name}")
+                markers = cast(MovieTrackingMarkers, track.markers)
 
-                # FIXME: How much did this track move X and Y since the previous frame?
+                previous_marker = markers.find_frame(frame_index - 1)
+                if previous_marker is None or previous_marker.mute:
+                    continue
 
-            # FIXME: Take the median of all movements between previous and this
-            # frame, for X and Y independently.
+                marker = markers.find_frame(frame_index)
+                if marker is None or marker.mute:
+                    continue
+
+                # How much did this track move X and Y since the previous frame?
+                dx = marker.co[0] - previous_marker.co[0]
+                dx_list.append(dx)
+                dy = marker.co[1] - previous_marker.co[1]
+                dy_list.append(dy)
+
+            if not dx_list:
+                # No markers for this frame
+                assert not dy_list
+                continue
+
+            # Take the median of all movements between previous and this frame,
+            # for X and Y independently.
+            dx_median = statistics.median(dx_list)
+            dy_median = statistics.median(dy_list)
+
+            print(
+                f"frames={frame_index-1}-{frame_index} dx_median={dx_median:2.3f} dy_median={dy_median:2.3f}"
+            )
 
             # FIXME: For each track, figure out how much this track moved compared
             # to the median, on X and Y independently.
