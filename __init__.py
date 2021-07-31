@@ -27,6 +27,7 @@ bl_info = {
     "version": (0, 0, 1),
     "location": "Clip Editor > Tools > Track > Find Bad Tracks",
     "warning": "",
+    "tracker_url": "https://github.com/walles/find_bad_motion_tracks/issues",
     "category": "Video Tools",
 }
 
