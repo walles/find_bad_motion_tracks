@@ -42,6 +42,12 @@ class TrackMovement:
     dy: float
 
 
+@dataclass
+class Badness:
+    amount: float
+    frame: int
+
+
 class MovementRange:
     def __init__(self, movements: List[TrackMovement]) -> None:
         # Take the median of all movements between previous and this frame,
@@ -102,7 +108,7 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         print(f"Clip goes from frame {first_frame_index} to {last_frame_index}")
 
         # Map track names to badness scores
-        badness_scores: Dict[str, float] = {}
+        badnesses: Dict[str, Badness] = {}
 
         for frame_index in range(first_frame_index + 1, last_frame_index):
             movements: List[TrackMovement] = []
@@ -135,19 +141,28 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
             # For each track, keep track of the worst badness score so far, for
             # X and Y independently.
             for movement in movements:
-                old_badness_score = badness_scores.get(movement.track.name, 0)
                 badness_score = movement_range.compute_badness_score(movement)
-                badness_scores[movement.track.name] = max(
-                    old_badness_score, badness_score
-                )
+
+                if movement.track.name not in badnesses:
+                    badnesses[movement.track.name] = Badness(
+                        badness_score, movement.frame1
+                    )
+                    continue
+
+                old_badness = badnesses[movement.track.name]
+                if old_badness.amount > badness_score:
+                    continue
+
+                badnesses[movement.track.name] = Badness(badness_score, movement.frame1)
 
         # Print all track names and their badness to the console
         for track_name, badness in sorted(
-            badness_scores.items(), key=lambda item: item[1]
+            badnesses.items(), key=lambda item: item[1].amount
         ):
-            print(f"{track_name} badness={badness:2.2f}")
+            print(
+                f"{track_name} badness={badness.amount:5.2f} at frame {badness.frame:3d}"
+            )
 
-        print("Johan")
         return {"FINISHED"}
 
 
