@@ -84,9 +84,10 @@ class MovementRange:
 
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
     """
-    FIXME: Long comment here, this text appears in the Blender UI.
+    Identify bad tracks by looking at how they move relative to other tracks.
 
-    It shows up when hovering the button for this operation.
+    For example, if all tracks move left in a frame, except one that moves
+    right, the moving-right track is likely bad and a human should inspect it.
     """
 
     bl_idname = "tracking.find_bad_tracks"
@@ -155,7 +156,7 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
 
                 badnesses[movement.track.name] = Badness(badness_score, movement.frame1)
 
-        # Print all track names and their badness to the console
+        # FIXME: Put this information in the UI
         for track_name, badness in sorted(
             badnesses.items(), key=lambda item: item[1].amount
         ):
