@@ -186,6 +186,11 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
         row = col.row(align=True)
         row.operator("tracking.find_bad_tracks")
 
+        grid = col.grid_flow(row_major=True, columns=2, even_rows=True)
+        for x in range(10):
+            grid.label(text="number")
+            grid.label(text=f"{x}")
+
 
 classes = (
     OP_Tracking_find_bad_tracks,
