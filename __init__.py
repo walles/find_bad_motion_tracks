@@ -22,7 +22,7 @@ from bpy.types import MovieTrackingMarkers, MovieTrackingTrack
 bl_info = {
     "name": "Find Bad Tracks",
     "author": "Johan Walles",
-    "description": "",
+    "description": "Highlight motion tracks that move in suspicious directions",
     "blender": (2, 93, 1),
     "version": (0, 0, 1),
     "location": "Clip Editor > Tools > Track > Find Bad Tracks",
