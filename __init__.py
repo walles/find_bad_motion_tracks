@@ -14,7 +14,8 @@
 import bpy
 import statistics
 
-from typing import cast, List
+from typing import cast, List, Dict, Iterable
+from dataclasses import dataclass
 
 from bpy.types import MovieTrackingMarkers, MovieTrackingTrack
 
@@ -30,6 +31,49 @@ bl_info = {
 }
 
 FIND_BAD_TRACKS = "Find Bad Tracks"
+
+
+@dataclass
+class TrackMovement:
+    track: MovieTrackingTrack
+    frame0: int
+    frame1: int
+    dx: float
+    dy: float
+
+
+class MovementRange:
+    def __init__(self, movements: List[TrackMovement]) -> None:
+        # Take the median of all movements between previous and this frame,
+        # for X and Y independently.
+        dx_median = statistics.median(map(lambda movement: movement.dx, movements))
+        dy_median = statistics.median(map(lambda movement: movement.dy, movements))
+
+        # For a 10 item list, this will be 8
+        percentile_count = (len(movements) * 4) // 5
+        assert 0 < percentile_count < len(movements)
+
+        # For a 10 item list, with indices 0-9, this will be 7
+        percentile_index = percentile_count - 1
+
+        dx_distance = sorted(
+            map(lambda movement: abs(movement.dx - dx_median), movements)
+        )[percentile_index]
+        dy_distance = sorted(
+            map(lambda movement: abs(movement.dy - dy_median), movements)
+        )[percentile_index]
+
+        self.dx_median = dx_median
+        self.dy_median = dy_median
+        self.dx_distance = dx_distance
+        self.dy_distance = dy_distance
+
+    def compute_badness_score(self, movement: TrackMovement) -> float:
+        # Figure out how much this track moved compared to the median and the
+        # movement wiggle room, on X and Y independently.
+        x_badness = abs(movement.dx - self.dx_median) / self.dx_distance
+        y_badness = abs(movement.dy - self.dy_median) / self.dy_distance
+        return max(x_badness, y_badness)
 
 
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
@@ -56,9 +100,12 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         first_frame_index = clip.frame_start
         last_frame_index = clip.frame_start + clip.frame_duration - 1
         print(f"Clip goes from frame {first_frame_index} to {last_frame_index}")
+
+        # Map track names to badness scores
+        badness_scores: Dict[str, float] = {}
+
         for frame_index in range(first_frame_index + 1, last_frame_index):
-            dx_list: List[float] = []
-            dy_list: List[float] = []
+            movements: List[TrackMovement] = []
 
             tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
             for track in tracks:
@@ -74,33 +121,32 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
 
                 # How much did this track move X and Y since the previous frame?
                 dx = marker.co[0] - previous_marker.co[0]
-                dx_list.append(dx)
                 dy = marker.co[1] - previous_marker.co[1]
-                dy_list.append(dy)
+                movements.append(
+                    TrackMovement(track, frame_index - 1, frame_index, dx, dy)
+                )
 
-            if not dx_list:
+            if not movements:
                 # No markers for this frame
-                assert not dy_list
                 continue
 
-            # Take the median of all movements between previous and this frame,
-            # for X and Y independently.
-            dx_median = statistics.median(dx_list)
-            dy_median = statistics.median(dy_list)
+            movement_range = MovementRange(movements)
 
-            print(
-                f"frames={frame_index-1}-{frame_index} dx_median={dx_median:2.3f} dy_median={dy_median:2.3f}"
-            )
+            # For each track, keep track of the worst badness score so far, for
+            # X and Y independently.
+            for movement in movements:
+                old_badness_score = badness_scores.get(movement.track.name, 0)
+                badness_score = movement_range.compute_badness_score(movement)
+                badness_scores[movement.track.name] = max(
+                    old_badness_score, badness_score
+                )
 
-            # FIXME: For each track, figure out how much this track moved compared
-            # to the median, on X and Y independently.
+        # Print all track names and their badness to the console
+        for track_name, badness in sorted(
+            badness_scores.items(), key=lambda item: item[1]
+        ):
+            print(f"{track_name} badness={badness:2.2f}")
 
-            # FIXME: For each track, keep track of the largest difference vs the
-            # median so far, for X and Y independently.
-            pass
-
-        # FIXME: Print all track names to the console, sorted by
-        # max(xdifference, ydifference) for each track.
         print("Johan")
         return {"FINISHED"}
 
