@@ -182,14 +182,20 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        col = layout.column(align=True)
-        row = col.row(align=True)
+        col = layout.column()
+        row = col.row()
         row.operator("tracking.find_bad_tracks")
 
-        grid = col.grid_flow(row_major=True, columns=2, even_rows=True)
+        row = col.row()
+        col = row.column(heading="Track")
         for x in range(10):
-            grid.label(text="number")
-            grid.label(text=f"{x}")
+            col.label(text=f"Track.{x:03d}")
+        col = row.column(heading="Badness")
+        for x in range(10):
+            col.label(text=f"{x/7}")
+        col = row.column(heading="Frame")
+        for x in range(10):
+            col.label(text=f"{x}")
 
 
 classes = (
