@@ -268,8 +268,8 @@ def on_switch_active_bad_track(
 
     # FIXME: Select only this track in the Tracking Clip editor
 
-    # FIXME: Set Tracking Graph frame from selected track frame number
-    pass
+    # Set Tracking Graph frame from selected track frame number
+    context.scene.frame_set(badness_item.frame)
 
 
 def register():
