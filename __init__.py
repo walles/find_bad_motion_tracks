@@ -50,7 +50,11 @@ class Badness:
 
 
 class BadnessItem(bpy.types.PropertyGroup):
-    track: bpy.props.StringProperty(name="Track", options={"SKIP_SAVE"})  # type: ignore
+    # FIXME: How do we make all of these read-only?
+
+    track: bpy.props.StringProperty(  # type: ignore
+        name="Track", options={"SKIP_SAVE"}, description="Track name"
+    )
 
     badness: bpy.props.FloatProperty(  # type: ignore
         name="Badness",
@@ -71,12 +75,9 @@ class TRACKING_UL_BadnessItem(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        layout.prop(item, "track")
-
-        # FIXME: Float prop, round this, use the text= parameter for that perhaps?
-        layout.prop(item, "badness")
-
-        layout.prop(item, "frame")
+        layout.prop(item, "track", text="")
+        layout.prop(item, "badness", text="")
+        layout.prop(item, "frame", text="")
 
 
 class MovementRange:
