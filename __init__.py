@@ -277,10 +277,16 @@ def on_switch_active_bad_track(
 
     # FIXME: Select only this track in the Tracking Dopesheet editor
 
-    # FIXME: Select only this track in the Tracking Clip editor
+    # Select only this track in the Tracking Clip editor
+    bpy.ops.clip.select_all(action="DESELECT")
+    all_tracks_list = cast(List[MovieTrackingTrack], clip.tracking.tracks)
+    for track in all_tracks_list:
+        if track.name == badness_item.track:
+            track.select = True
 
     # Set Tracking Graph frame from selected track frame number
     context.scene.frame_set(badness_item.frame)
+    # FIXME: Refresh the clip view so it shows the selected frame
 
 
 def register():
