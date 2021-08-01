@@ -264,6 +264,17 @@ def on_switch_active_bad_track(
     badness_item: BadnessItem = bad_tracks_collection[active_bad_track_index]
     print(f"Update: {badness_item.track} at frame {badness_item.frame}")
 
+    spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
+    active = cast(bpy.types.SpaceClipEditor, spaces.active)
+    clip = active.clip
+
+    # Get ourselves a reference to the bad track object
+    all_tracks_collection = cast(bpy.types.bpy_prop_collection, clip.tracking.tracks)
+    bad_track_index = all_tracks_collection.find(badness_item.track)
+    bad_track = all_tracks_collection.values()[bad_track_index]
+
+    print(f"Bad track = {bad_track}")
+
     # FIXME: Select only this track in the Tracking Dopesheet editor
 
     # FIXME: Select only this track in the Tracking Clip editor
