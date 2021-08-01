@@ -53,7 +53,9 @@ class BadnessItem(bpy.types.PropertyGroup):
     # FIXME: How do we make all of these read-only?
 
     track: bpy.props.StringProperty(  # type: ignore
-        name="Track", options={"SKIP_SAVE"}, description="Track name"
+        name="Track",
+        options={"SKIP_SAVE"},
+        description="Track name",
     )
 
     badness: bpy.props.FloatProperty(  # type: ignore
@@ -252,6 +254,24 @@ classes = (
 )
 
 
+def on_switch_active_bad_track(
+    self: bpy.types.IntProperty, context: bpy.types.Context
+) -> None:
+    active_bad_track_index: int = context.object.active_bad_track  # type: ignore
+
+    # Get the list entry from this index
+    bad_tracks_collection = context.object.bad_tracks  # type: ignore
+    badness_item: BadnessItem = bad_tracks_collection[active_bad_track_index]
+    print(f"Update: {badness_item.track} at frame {badness_item.frame}")
+
+    # FIXME: Select only this track in the Tracking Dopesheet editor
+
+    # FIXME: Select only this track in the Tracking Clip editor
+
+    # FIXME: Set Tracking Graph frame from selected track frame number
+    pass
+
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -275,6 +295,7 @@ def register():
         description="Index of the currently active bad track",
         default=0,
         options={"SKIP_SAVE"},
+        update=on_switch_active_bad_track,
     )
 
 
