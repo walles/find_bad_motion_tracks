@@ -75,9 +75,17 @@ class TRACKING_UL_BadnessItem(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        layout.prop(item, "track", text="")
-        layout.prop(item, "badness", text="")
-        layout.prop(item, "frame", text="")
+        # Experiments show that the item is of class BadnessItem
+        track_name = item.track
+        layout.label(text=track_name)
+
+        # FIXME: How do we right align this label?
+        badness = item.badness
+        layout.label(text=f"{badness:.1f}")
+
+        # FIXME: How do we right align this label?
+        frame = item.frame
+        layout.label(text=str(frame))
 
 
 class MovementRange:
@@ -232,7 +240,7 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
             propname="bad_tracks",
             active_dataptr=context.object,
             active_propname="active_bad_track",
-            rows=5,
+            sort_lock=True,
         )
 
 
