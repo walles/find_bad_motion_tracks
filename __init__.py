@@ -49,6 +49,36 @@ class Badness:
     frame: int
 
 
+class BadnessItem(bpy.types.PropertyGroup):
+    track: bpy.props.StringProperty(name="Track", options={"SKIP_SAVE"})  # type: ignore
+
+    badness: bpy.props.FloatProperty(  # type: ignore
+        name="Badness",
+        options={"SKIP_SAVE"},
+        min=0,
+        description="The worst badness score for any marker movement of this track",
+    )
+
+    frame: bpy.props.IntProperty(  # type: ignore
+        name="Test Property",
+        options={"SKIP_SAVE"},
+        min=0,
+        description="Frame number of the worst badness score",
+    )
+
+
+class TRACKING_UL_BadnessItem(bpy.types.UIList):
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
+        layout.prop(item, "track")
+
+        # FIXME: Float prop, round this, use the text= parameter for that perhaps?
+        layout.prop(item, "badness")
+
+        layout.prop(item, "frame")
+
+
 class MovementRange:
     def __init__(self, movements: List[TrackMovement]) -> None:
         # Take the median of all movements between previous and this frame,
@@ -157,10 +187,17 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
 
                 badnesses[movement.track.name] = Badness(badness_score, movement.frame1)
 
-        # FIXME: Put this information in the UI
+        bad_tracks_prop = context.object.bad_tracks  # type: ignore
+        bad_tracks_prop.clear()
         for track_name, badness in sorted(
-            badnesses.items(), key=lambda item: item[1].amount
+            badnesses.items(), key=lambda item: item[1].amount, reverse=True
         ):
+            new_property = bad_tracks_prop.add()
+            new_property.track = track_name
+            new_property.badness = badness.amount
+            new_property.frame = badness.frame
+
+            # FIXME: Debug statement, consider removing
             print(
                 f"{track_name} badness={badness.amount:5.2f} at frame {badness.frame:3d}"
             )
@@ -187,22 +224,57 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
         row.operator("tracking.find_bad_tracks")
 
         row = col.row()
-        col = row.column(heading="Track")
-        for x in range(10):
-            col.label(text=f"Track.{x:03d}")
-        col = row.column(heading="Badness")
-        for x in range(10):
-            col.label(text=f"{x/7}")
-        col = row.column(heading="Frame")
-        for x in range(10):
-            col.label(text=f"{x}")
+        row.template_list(
+            listtype_name="TRACKING_UL_BadnessItem",
+            list_id="",
+            dataptr=context.object,
+            propname="bad_tracks",
+            active_dataptr=context.object,
+            active_propname="active_bad_track",
+            rows=5,
+        )
 
 
 classes = (
     OP_Tracking_find_bad_tracks,
     TRACKING_PT_FindBadTracksPanel,
+    TRACKING_UL_BadnessItem,
+    BadnessItem,
 )
-register, unregister = bpy.utils.register_classes_factory(classes)
+
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+    # Ref: https://docs.blender.org/api/current/bpy.props.html#bpy.props.CollectionProperty
+    #
+    # Options and overrides are documented here:
+    # https://github.com/dfelinto/blender/blob/master/source/blender/python/intern/bpy_props.c
+    #
+    # FIXME: Can we do "bpy.types.MovieTracking.bad_tracks =" here instead?
+    bpy.types.Object.bad_tracks = bpy.props.CollectionProperty(
+        type=BadnessItem,
+        name="Bad Tracks",
+        description="List of tracks sorted by badness score",
+        options={"SKIP_SAVE"},
+    )
+
+    # FIXME: I don't care about selection right now, figure out what we really want here.
+    bpy.types.Object.active_bad_track = bpy.props.IntProperty(
+        name="Active Bad Track",
+        description="Index of the currently active bad track",
+        default=0,
+        options={"SKIP_SAVE"},
+    )
+
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
+
+    # Clear properties.
+    del bpy.types.Object.bad_tracks
 
 
 if __name__ == "__main__":
