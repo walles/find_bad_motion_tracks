@@ -274,6 +274,10 @@ def on_switch_active_bad_track(
 
     # FIXME: Select only this track in the Tracking Dopesheet editor
 
+    # Highlight this track on the right of the Tracking Clip editor
+    movie_tracking_tracks = cast(bpy.types.MovieTrackingTracks, clip.tracking.tracks)
+    movie_tracking_tracks.active = bad_track
+
     # Select only the clicked track in the Tracking Clip editor
     bpy.ops.clip.select_all(action="DESELECT")
     all_tracks_list = cast(List[MovieTrackingTrack], clip.tracking.tracks)
