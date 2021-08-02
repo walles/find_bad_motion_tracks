@@ -262,7 +262,6 @@ def on_switch_active_bad_track(
     # Get the list entry from this index
     bad_tracks_collection = context.object.bad_tracks  # type: ignore
     badness_item: BadnessItem = bad_tracks_collection[active_bad_track_index]
-    print(f"Update: {badness_item.track} at frame {badness_item.frame}")
 
     spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
     active = cast(bpy.types.SpaceClipEditor, spaces.active)
@@ -273,20 +272,21 @@ def on_switch_active_bad_track(
     bad_track_index = all_tracks_collection.find(badness_item.track)
     bad_track = all_tracks_collection.values()[bad_track_index]
 
-    print(f"Bad track = {bad_track}")
-
     # FIXME: Select only this track in the Tracking Dopesheet editor
 
-    # Select only this track in the Tracking Clip editor
+    # Select only the clicked track in the Tracking Clip editor
     bpy.ops.clip.select_all(action="DESELECT")
     all_tracks_list = cast(List[MovieTrackingTrack], clip.tracking.tracks)
     for track in all_tracks_list:
         if track.name == badness_item.track:
             track.select = True
 
-    # Set Tracking Graph frame from selected track frame number
+    # Skip to the worst frame
+    #
+    # NOTE: With Blender 2.93.1 the ordering here seems to matter. If you
+    # frame_set() before change_frame() the clip view doesn't update properly.
+    bpy.ops.clip.change_frame(badness_item.frame)
     context.scene.frame_set(badness_item.frame)
-    # FIXME: Refresh the clip view so it shows the selected frame
 
 
 def register():
