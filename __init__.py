@@ -12,6 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import bpy
+import time
 import statistics
 
 from typing import cast, List, Dict, Iterable
@@ -141,6 +142,8 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         return True
 
     def execute(self, context: bpy.types.Context):
+        t0 = time.time()
+
         spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
         active = cast(bpy.types.SpaceClipEditor, spaces.active)
         clip = active.clip
@@ -148,7 +151,6 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         # For each clip frame except the first...
         first_frame_index = clip.frame_start
         last_frame_index = clip.frame_start + clip.frame_duration - 1
-        print(f"Clip goes from frame {first_frame_index} to {last_frame_index}")
 
         # Map track names to badness scores
         badnesses: Dict[str, Badness] = {}
@@ -208,10 +210,8 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
             new_property.badness = badness.amount
             new_property.frame = badness.frame
 
-            # FIXME: Debug statement, consider removing
-            print(
-                f"{track_name} badness={badness.amount:5.2f} at frame {badness.frame:3d}"
-            )
+        t1 = time.time()
+        print(f"Finding bad tracks took {t1 - t0:.2f}s")
 
         return {"FINISHED"}
 
@@ -273,6 +273,7 @@ def on_switch_active_bad_track(
     bad_track = all_tracks_collection.values()[bad_track_index]
 
     # FIXME: Select only this track in the Tracking Dopesheet editor
+    # Asked here: https://blender.chat/channel/python?msg=6Zx3Nk6NKZMsmkxPy
 
     # Highlight this track on the right of the Tracking Clip editor
     movie_tracking_tracks = cast(bpy.types.MovieTrackingTracks, clip.tracking.tracks)
