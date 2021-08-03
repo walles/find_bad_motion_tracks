@@ -15,7 +15,7 @@ by a human.
 ## Installation Instructions
 
 1. Go to the [latest release download page](https://github.com/walles/find_bad_motion_tracks/releases/latest)
-1. Download the `find_bad_tracks-A.B.C.py` file
+1. Download the `find_bad_tracks-A_B_C.py` file
 1. In Blender, open Preferences (under the <kbd>Edit</kbd> menu)
 1. Click <kbd>Add-ons</kbd>
 1. Click the <kbd>Install...</kbd> button
