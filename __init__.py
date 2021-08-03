@@ -181,8 +181,10 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         badnesses: Dict[str, Badness] = {}
 
         for frame_index in range(first_frame_index + 1, last_frame_index):
-            x_movements: List[TrackWithFloat] = []
-            y_movements: List[TrackWithFloat] = []
+            dx_list: List[TrackWithFloat] = []
+            dy_list: List[TrackWithFloat] = []
+            ddx_list: List[TrackWithFloat] = []
+            ddy_list: List[TrackWithFloat] = []
 
             tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
             for track in tracks:
@@ -199,11 +201,24 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
                 # How much did this track move X and Y since the previous frame?
                 dx = marker.co[0] - previous_marker.co[0]
                 dy = marker.co[1] - previous_marker.co[1]
-                x_movements.append(TrackWithFloat(track, dx, frame_index))
-                y_movements.append(TrackWithFloat(track, dy, frame_index))
+                dx_list.append(TrackWithFloat(track, dx, frame_index))
+                dy_list.append(TrackWithFloat(track, dy, frame_index))
 
-            update_badnesses(badnesses, x_movements)
-            update_badnesses(badnesses, y_movements)
+                previous_previous_marker = markers.find_frame(frame_index - 2)
+                if previous_previous_marker is None or previous_previous_marker.mute:
+                    continue
+
+                previous_dx = previous_marker.co[0] - previous_previous_marker.co[0]
+                previous_dy = previous_marker.co[1] - previous_previous_marker.co[1]
+                ddx = dx - previous_dx
+                ddy = dy - previous_dy
+                ddx_list.append(TrackWithFloat(track, ddx, frame_index))
+                ddy_list.append(TrackWithFloat(track, ddy, frame_index))
+
+            update_badnesses(badnesses, dx_list)
+            update_badnesses(badnesses, dy_list)
+            update_badnesses(badnesses, ddx_list)
+            update_badnesses(badnesses, ddy_list)
 
         bad_tracks_prop = context.object.bad_tracks  # type: ignore
         bad_tracks_prop.clear()
