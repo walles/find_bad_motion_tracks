@@ -14,17 +14,21 @@ by a human.
 
 ## Installation Instructions
 
-FIXME: None yet, half of the UI is still in the Blender console, that needs to
-be fixed before I feel comfortable trying to get anybody but me to use this.
+1. Go to the [latest release download page](https://github.com/walles/find_bad_motion_tracks/releases/latest)
+1. Download the `find_bad_tracks-A.B.C.py` file
+1. In Blender, open Preferences (under the <kbd>Edit</kbd> menu)
+1. Click <kbd>Add-ons</kbd>
+1. Click the <kbd>Install...</kbd> button
+1. Find the file you just downloaded and click <kbd>Install Add-on</kbd>
+1. Check the box next to <kbd>Video Tools: Find Bad Tracks</kbd>
 
 ## Usage Instructions
 
-1. Make sure the addon is enabled, I'm using the VS Code Blender extension for
-   this right now (FIXME: This is sucky advise)
+1. Follow the Installation Instructions `^` for how to install and enable this addon
 1. Do some motion tracking, collect some tracks
 1. In the Motion Tracking workspace, Movie Clip Editor on the middle left of
-   your screen, select the Track tab, expand "Find Bad Tracks" (you may have to
-   scroll down to see this section) and press the "Find Bad Tracks" button
+   your screen, select the <kbd>Track</kbd> tab, expand <kbd>Find Bad Tracks</kbd> (you may have to
+   scroll down to see this section) and press the <kbd>Find Bad Tracks</kbd> button
 1. A list of tracks will now be displayed just below that button, with the worst
    frame number for each track and its badness score at that point.
 1. Clicking a track in the list will select that track in the clip editor and
@@ -62,7 +66,6 @@ Run `release.sh` and follow instructions.
 
 ## TODO
 
-- Document install instructions higher up in this document
 - Announce on BlenderNation
 - Fix user reported issues
 - Publish on Blender Market
@@ -80,3 +83,4 @@ Run `release.sh` and follow instructions.
 
 - Document a release process
 - Make an initial release
+- Document install instructions higher up in this document

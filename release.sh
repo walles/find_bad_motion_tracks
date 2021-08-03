@@ -9,7 +9,7 @@ read -r -p "Press RETURN > "
 echo "Please make an annotated tag with git tag --annotate VERSION"
 read -r -p "Press RETURN > "
 
-echo "Please: cp __init__.py find_bad_tracks-VERSION.py"
+echo "Please: cp __init__.py find_bad_tracks-VERSION.py, but make sure the version number is underscore separated"
 read -r -p "Press RETURN > "
 
 echo "Please update the version number in find_bad_tracks-VERSION.py"
