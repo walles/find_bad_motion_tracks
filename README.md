@@ -56,19 +56,27 @@ I have developed this with:
 - The [Fake Blender Python API module collection](https://github.com/nutti/fake-bpy-module) in a virtualenv
 - Blender 2.93.1
 
+## Making a New Release
+
+Run `release.sh` and follow instructions.
+
 ## TODO
 
-- Document a release process
+- Make an initial release
 - Document install instructions higher up in this document
+- Announce on BlenderNation
+- Fix user reported issues
+- Publish on Blender Market
+- Profile and see what can easily be sped up
 - Fix the tracks list tooltip, the current text makes no sense: "Active Bad
   Track / Double click to rename."
-- Profile and see what can easily be sped up
-- Ignore locked tracks, assumng they have been manually vetted?
+- Ignore locked tracks, assuming they have been manually vetted?
 - Add a `tox.ini` with:
   - `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
   - `pylint`
   - `black` code formatting, format locally and verify in CI
 - Add a `tox` Github action for PRs and pushes
-- Announce on BlenderNation
-- Fix user reported issues
-- Publish on Blender Market
+
+### DONE
+
+- Document a release process
