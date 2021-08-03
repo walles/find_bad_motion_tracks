@@ -62,7 +62,6 @@ Run `release.sh` and follow instructions.
 
 ## TODO
 
-- Make an initial release
 - Document install instructions higher up in this document
 - Announce on BlenderNation
 - Fix user reported issues
@@ -80,3 +79,4 @@ Run `release.sh` and follow instructions.
 ### DONE
 
 - Document a release process
+- Make an initial release

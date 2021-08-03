@@ -18,5 +18,5 @@ read -r -p "Press RETURN > "
 echo "Please: git push --tags"
 read -r -p "Press RETURN > "
 
-echo "Please upload find_bad_tracks-VERSION.py to the Github release page"
+echo "Please upload find_bad_tracks-VERSION.py at https://github.com/walles/find_bad_motion_tracks/releases/tag/VERSION"
 read -r -p "Press RETURN > "
