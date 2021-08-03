@@ -96,6 +96,8 @@ class MovementRange:
     def __init__(self, movements: List[TrackMovement]) -> None:
         # Take the median of all movements between previous and this frame,
         # for X and Y independently.
+        #
+        # FIXME: Should we give higher weights to locked tracks?
         dx_median = statistics.median(map(lambda movement: movement.dx, movements))
         dy_median = statistics.median(map(lambda movement: movement.dy, movements))
 
@@ -103,7 +105,8 @@ class MovementRange:
         percentile_count = (len(movements) * 4) // 5
         assert 0 < percentile_count < len(movements)
 
-        # For a 10 item list, with indices 0-9, this will be 7
+        # For a 10 item list, with indices 0-9, this will be 7, skipping the two
+        # last ones.
         percentile_index = percentile_count - 1
 
         dx_distance = sorted(
@@ -187,6 +190,11 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
             # For each track, keep track of the worst badness score so far, for
             # X and Y independently.
             for movement in movements:
+                if movement.track.lock:
+                    # Assume locked tracks have been vetted by a human and that
+                    # they are perfect.
+                    continue
+
                 badness_score = movement_range.compute_badness_score(movement)
 
                 if movement.track.name not in badnesses:

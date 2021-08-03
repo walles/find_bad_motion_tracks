@@ -72,7 +72,6 @@ Run `release.sh` and follow instructions.
 - Profile and see what can easily be sped up
 - Fix the tracks list tooltip, the current text makes no sense: "Active Bad
   Track / Double click to rename."
-- Ignore locked tracks, assuming they have been manually vetted?
 - Add a `tox.ini` with:
   - `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
   - `pylint`
@@ -84,3 +83,4 @@ Run `release.sh` and follow instructions.
 - Document a release process
 - Make an initial release
 - Document install instructions higher up in this document
+- Ignore locked tracks, assuming they have been manually vetted by a human
