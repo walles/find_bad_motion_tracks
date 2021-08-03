@@ -37,12 +37,10 @@ FIND_BAD_TRACKS = "Find Bad Tracks"
 
 
 @dataclass
-class TrackMovement:
+class TrackWithFloat:
     track: MovieTrackingTrack
-    frame0: int
-    frame1: int
-    dx: float
-    dy: float
+    number: float
+    blame_frame: int
 
 
 @dataclass
@@ -92,14 +90,13 @@ class TRACKING_UL_BadnessItem(bpy.types.UIList):
         layout.label(text=str(frame))
 
 
-class MovementRange:
-    def __init__(self, movements: List[TrackMovement]) -> None:
-        # Take the median of all movements between previous and this frame,
-        # for X and Y independently.
+class BadnessCalculator:
+    def __init__(self, movements: List[TrackWithFloat]) -> None:
+        # Take the median of all numbers.
         #
-        # FIXME: Should we give higher weights to locked tracks?
-        dx_median = statistics.median(map(lambda movement: movement.dx, movements))
-        dy_median = statistics.median(map(lambda movement: movement.dy, movements))
+        # FIXME: Should we give higher weights to locked tracks? Since a human
+        # has likely locked them because those tracks are known good?
+        median = statistics.median(map(lambda movement: movement.number, movements))
 
         # For a 10 item list, this will be 8
         percentile_count = (len(movements) * 4) // 5
@@ -109,24 +106,48 @@ class MovementRange:
         # last ones.
         percentile_index = percentile_count - 1
 
-        dx_distance = sorted(
-            map(lambda movement: abs(movement.dx - dx_median), movements)
-        )[percentile_index]
-        dy_distance = sorted(
-            map(lambda movement: abs(movement.dy - dy_median), movements)
+        distance = sorted(
+            map(lambda movement: abs(movement.number - median), movements)
         )[percentile_index]
 
-        self.dx_median = dx_median
-        self.dy_median = dy_median
-        self.dx_distance = dx_distance
-        self.dy_distance = dy_distance
+        self.median = median
+        self.distance = distance
 
-    def compute_badness_score(self, movement: TrackMovement) -> float:
+    def compute_badness_score(self, movement: TrackWithFloat) -> float:
         # Figure out how much this track moved compared to the median and the
-        # movement wiggle room, on X and Y independently.
-        x_badness = abs(movement.dx - self.dx_median) / self.dx_distance
-        y_badness = abs(movement.dy - self.dy_median) / self.dy_distance
-        return max(x_badness, y_badness)
+        # movement wiggle room.
+        return abs(movement.number - self.median) / self.distance
+
+
+def update_badnesses(
+    badnesses: Dict[str, Badness], movements: List[TrackWithFloat]
+) -> None:
+    if not movements:
+        # Nothing to see here, move along. Also, the median() call below throws
+        # an exception if called with no data.
+        return
+
+    # For each track, keep track of the worst badness score so far
+    badness_calculator = BadnessCalculator(movements)
+    for movement in movements:
+        if movement.track.lock:
+            # Assume locked tracks have been vetted by a human and that
+            # they are perfect.
+            continue
+
+        badness_score = badness_calculator.compute_badness_score(movement)
+
+        if movement.track.name not in badnesses:
+            badnesses[movement.track.name] = Badness(
+                badness_score, movement.blame_frame
+            )
+            continue
+
+        old_badness = badnesses[movement.track.name]
+        if old_badness.amount > badness_score:
+            continue
+
+        badnesses[movement.track.name] = Badness(badness_score, movement.blame_frame)
 
 
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
@@ -160,7 +181,8 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         badnesses: Dict[str, Badness] = {}
 
         for frame_index in range(first_frame_index + 1, last_frame_index):
-            movements: List[TrackMovement] = []
+            x_movements: List[TrackWithFloat] = []
+            y_movements: List[TrackWithFloat] = []
 
             tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
             for track in tracks:
@@ -177,37 +199,11 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
                 # How much did this track move X and Y since the previous frame?
                 dx = marker.co[0] - previous_marker.co[0]
                 dy = marker.co[1] - previous_marker.co[1]
-                movements.append(
-                    TrackMovement(track, frame_index - 1, frame_index, dx, dy)
-                )
+                x_movements.append(TrackWithFloat(track, dx, frame_index))
+                y_movements.append(TrackWithFloat(track, dy, frame_index))
 
-            if not movements:
-                # No markers for this frame
-                continue
-
-            movement_range = MovementRange(movements)
-
-            # For each track, keep track of the worst badness score so far, for
-            # X and Y independently.
-            for movement in movements:
-                if movement.track.lock:
-                    # Assume locked tracks have been vetted by a human and that
-                    # they are perfect.
-                    continue
-
-                badness_score = movement_range.compute_badness_score(movement)
-
-                if movement.track.name not in badnesses:
-                    badnesses[movement.track.name] = Badness(
-                        badness_score, movement.frame1
-                    )
-                    continue
-
-                old_badness = badnesses[movement.track.name]
-                if old_badness.amount > badness_score:
-                    continue
-
-                badnesses[movement.track.name] = Badness(badness_score, movement.frame1)
+            update_badnesses(badnesses, x_movements)
+            update_badnesses(badnesses, y_movements)
 
         bad_tracks_prop = context.object.bad_tracks  # type: ignore
         bad_tracks_prop.clear()
