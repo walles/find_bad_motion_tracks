@@ -123,8 +123,15 @@ def update_badnesses(
     badnesses: Dict[str, Badness], movements: List[TrackWithFloat]
 ) -> None:
     if not movements:
-        # Nothing to see here, move along. Also, the median() call below throws
-        # an exception if called with no data.
+        # Nothing to see here, move along. Also, the median() call in the
+        # BadnessCalculator constructor throws an exception if called with no
+        # data.
+        return
+
+    if len(movements) < 4:
+        # To detect outliers we want a median, with one track on each side to
+        # set the baseline, plus a fourth track that is potentially outlying.
+        # With fewer tracks than that the badness score becomes too uncertain.
         return
 
     # For each track, keep track of the worst badness score so far
