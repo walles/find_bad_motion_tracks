@@ -170,6 +170,8 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         # FIXME: Without at least three tracks we should return False here
+        if context.object is None:
+            return False
         return get_active_clip(context) is not None
 
     def execute(self, context: bpy.types.Context):
@@ -248,8 +250,8 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        # FIXME: Return true if we have any tracks, this method is a duplicate!
-        return True
+        # Fix for https://github.com/walles/find_bad_motion_tracks/issues/2
+        return context.object is not None
 
     def draw(self, context):
         layout = self.layout
@@ -281,6 +283,9 @@ classes = (
 def on_switch_active_bad_track(
     self: bpy.types.IntProperty, context: bpy.types.Context
 ) -> None:
+    if context.object is None:  # type: ignore
+        return
+
     active_bad_track_index: int = context.object.active_bad_track  # type: ignore
 
     # Get the list entry from this index
