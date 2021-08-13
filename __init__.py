@@ -150,6 +150,12 @@ def update_badnesses(
         badnesses[movement.track.name] = Badness(badness_score, movement.blame_frame)
 
 
+def get_active_clip(context: bpy.types.Context):
+    spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
+    active = cast(bpy.types.SpaceClipEditor, spaces.active)
+    return active.clip
+
+
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
     """
     Identify bad tracks by looking at how they move relative to other tracks.
@@ -163,15 +169,13 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        # FIXME: Return true if we have any tracks, this method is a duplicate!
-        return True
+        # FIXME: Without at least three tracks we should return False here
+        return get_active_clip(context) is not None
 
     def execute(self, context: bpy.types.Context):
         t0 = time.time()
 
-        spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
-        active = cast(bpy.types.SpaceClipEditor, spaces.active)
-        clip = active.clip
+        clip = get_active_clip(context)
 
         # For each clip frame except the first...
         first_frame_index = clip.frame_start
@@ -283,9 +287,7 @@ def on_switch_active_bad_track(
     bad_tracks_collection = context.object.bad_tracks  # type: ignore
     badness_item: BadnessItem = bad_tracks_collection[active_bad_track_index]
 
-    spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
-    active = cast(bpy.types.SpaceClipEditor, spaces.active)
-    clip = active.clip
+    clip = get_active_clip(context)
 
     # Get ourselves a reference to the bad track object
     all_tracks_collection = cast(bpy.types.bpy_prop_collection, clip.tracking.tracks)
