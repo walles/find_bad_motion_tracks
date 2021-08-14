@@ -176,8 +176,11 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
+        """
+        If this method return False, our UI will be disabled.
+        """
         # FIXME: Without at least three tracks we should return False here
-        if context.object is None:
+        if context.edit_movieclip is None:
             return False
         return get_active_clip(context) is not None
 
@@ -233,7 +236,7 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
             update_badnesses(badnesses, ddx_list)
             update_badnesses(badnesses, ddy_list)
 
-        bad_tracks_prop = context.object.bad_tracks  # type: ignore
+        bad_tracks_prop = context.edit_movieclip.bad_tracks  # type: ignore
         bad_tracks_prop.clear()
         for track_name, badness in sorted(
             badnesses.items(), key=lambda item: item[1].amount, reverse=True
@@ -257,8 +260,11 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
+        """
+        If this method returns False our UI will not be visible.
+        """
         # Fix for https://github.com/walles/find_bad_motion_tracks/issues/2
-        return context.object is not None
+        return context.edit_movieclip is not None
 
     def draw(self, context):
         layout = self.layout
@@ -271,9 +277,9 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
         row.template_list(
             listtype_name="TRACKING_UL_BadnessItem",
             list_id="",
-            dataptr=context.object,
+            dataptr=context.edit_movieclip,
             propname="bad_tracks",
-            active_dataptr=context.object,
+            active_dataptr=context.edit_movieclip,
             active_propname="active_bad_track",
             sort_lock=True,
         )
@@ -290,13 +296,13 @@ classes = (
 def on_switch_active_bad_track(
     self: bpy.types.IntProperty, context: bpy.types.Context
 ) -> None:
-    if context.object is None:  # type: ignore
+    if context.edit_movieclip is None:  # type: ignore
         return
 
-    active_bad_track_index: int = context.object.active_bad_track  # type: ignore
+    active_bad_track_index: int = context.edit_movieclip.active_bad_track  # type: ignore
 
     # Get the list entry from this index
-    bad_tracks_collection = context.object.bad_tracks  # type: ignore
+    bad_tracks_collection = context.edit_movieclip.bad_tracks  # type: ignore
     badness_item: BadnessItem = bad_tracks_collection[active_bad_track_index]
 
     clip = get_active_clip(context)
@@ -336,17 +342,14 @@ def register():
     #
     # Options and overrides are documented here:
     # https://github.com/dfelinto/blender/blob/master/source/blender/python/intern/bpy_props.c
-    #
-    # FIXME: Can we do "bpy.types.MovieTracking.bad_tracks =" here instead?
-    bpy.types.Object.bad_tracks = bpy.props.CollectionProperty(
+    bpy.types.MovieClip.bad_tracks = bpy.props.CollectionProperty(
         type=BadnessItem,
         name="Bad Tracks",
         description="List of tracks sorted by badness score",
         options={"SKIP_SAVE"},
     )
 
-    # FIXME: I don't care about selection right now, figure out what we really want here.
-    bpy.types.Object.active_bad_track = bpy.props.IntProperty(
+    bpy.types.MovieClip.active_bad_track = bpy.props.IntProperty(
         name="Active Bad Track",
         description="Index of the currently active bad track",
         default=0,
@@ -360,7 +363,8 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
     # Clear properties.
-    del bpy.types.Object.bad_tracks
+    del bpy.types.MovieClip.bad_tracks
+    del bpy.types.MovieClip.active_bad_track
 
 
 if __name__ == "__main__":
