@@ -269,12 +269,28 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
+        # Draw the button
         col = layout.column()
         row = col.row()
         row.operator("tracking.find_bad_tracks")
 
-        row = col.row()
-        row.template_list(
+        # Draw the bad-tracks list
+        box = col.box()
+        box.row().label(text="Bad Tracks")
+        box.row().template_list(
+            listtype_name="TRACKING_UL_BadnessItem",
+            list_id="",
+            dataptr=context.edit_movieclip,
+            propname="bad_tracks",
+            active_dataptr=context.edit_movieclip,
+            active_propname="active_bad_track",
+            sort_lock=True,
+        )
+
+        # FIXME: Draw a duplicate-tracks list
+        box = col.box()
+        box.row().label(text="Duplicate Tracks")
+        box.row().template_list(
             listtype_name="TRACKING_UL_BadnessItem",
             list_id="",
             dataptr=context.edit_movieclip,
