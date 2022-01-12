@@ -64,7 +64,8 @@ I have developed this with:
 
 ## Making a New Release
 
-Run `release.sh` and follow instructions.
+1. Make sure the screenshot and description ^ are both up to date and in sync.
+1. Run `release.sh` and follow instructions.
 
 ## TODO
 
@@ -93,3 +94,4 @@ Run `release.sh` and follow instructions.
 - Ignore locked tracks, assuming they have been manually vetted by a human
 - Announce on BlenderNation
 - Fix user reported issues
+- Add duplicate tracks detection
