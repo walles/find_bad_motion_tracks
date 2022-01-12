@@ -424,7 +424,7 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
             sort_lock=True,
         )
 
-        # FIXME: Draw a duplicate-tracks list
+        # Draw a duplicate-tracks list
         box = col.box()
         box.row().label(text="Duplicate Tracks")
         box.row().template_list(
@@ -492,13 +492,44 @@ def on_switch_active_bad_track(
 def on_switch_active_duplicate_tracks(
     self: bpy.types.IntProperty, context: bpy.types.Context
 ) -> None:
-    # FIXME: Steal code from on_switch_active_bad_track()
+    if context.edit_movieclip is None:  # type: ignore
+        return
 
-    # FIXME: Select our two duplicates and no other tracks
+    active_duplicate_tracks_index: int = context.edit_movieclip.active_duplicate_tracks  # type: ignore
 
-    # FIXME: Skip to the frame where the tracks first overlap
+    # Get the list entry from this index
+    duplicate_tracks_collection = context.edit_movieclip.duplicate_tracks  # type: ignore
+    dup_item: DuplicateItem = duplicate_tracks_collection[active_duplicate_tracks_index]
 
-    return
+    clip = get_active_clip(context)
+
+    # Get ourselves a reference to the duplicate track objects
+    all_tracks_collection = cast(bpy.types.bpy_prop_collection, clip.tracking.tracks)
+    dup_track1_index = all_tracks_collection.find(dup_item.track1_name)
+    dup_track1 = all_tracks_collection.values()[dup_track1_index]
+    dup_track2_index = all_tracks_collection.find(dup_item.track2_name)
+    dup_track2 = all_tracks_collection.values()[dup_track2_index]
+
+    # FIXME: Select only this track in the Tracking Dopesheet editor
+    # Asked here: https://blender.chat/channel/python?msg=6Zx3Nk6NKZMsmkxPy
+
+    # Highlight one of the tracks on the right of the Tracking Clip editor
+    movie_tracking_tracks = cast(bpy.types.MovieTrackingTracks, clip.tracking.tracks)
+    movie_tracking_tracks.active = dup_track1
+
+    # Select only the duplicate tracks in the Tracking Clip editor
+    bpy.ops.clip.select_all(action="DESELECT")
+    all_tracks_list = cast(List[MovieTrackingTrack], clip.tracking.tracks)
+    for track in all_tracks_list:
+        if track.name in (dup_item.track1_name, dup_item.track2_name):
+            track.select = True
+
+    # Skip to the first overlapping frame
+    #
+    # NOTE: With Blender 2.93.1 the ordering here seems to matter. If you
+    # frame_set() before change_frame() the clip view doesn't update properly.
+    bpy.ops.clip.change_frame(dup_item.frame)
+    context.scene.frame_set(dup_item.frame)
 
 
 def register():
