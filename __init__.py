@@ -114,7 +114,8 @@ class TRACKING_UL_BadnessItem(bpy.types.UIList):
         badness = badnessItem.badness
         layout.label(text=f"{badness:.1f}")
 
-        # FIXME: How do we right align this label?
+        # FIXME: Drop this, the UI is really narrow and clicking the line will
+        # go to the bad frame anyway
         frame = badnessItem.frame
         layout.label(text=str(frame))
 
