@@ -54,6 +54,13 @@ class Badness:
     frame: int
 
 
+@dataclass
+class Duplicate:
+    track1_name: str
+    track2_name: str
+    frame: int
+
+
 class BadnessItem(bpy.types.PropertyGroup):
     # FIXME: How do we make all of these read-only in the UI?
 
@@ -144,7 +151,7 @@ class TRACKING_UL_DuplicateItem(bpy.types.UIList):
         flt_flag: int = 0,
     ):
         duplicateItem = cast(DuplicateItem, item)
-        layout.label(f"{duplicateItem.track1_name} & {duplicateItem.track2_name}")
+        layout.label(text=f"{duplicateItem.track1_name} & {duplicateItem.track2_name}")
 
 
 class BadnessCalculator:
@@ -271,7 +278,7 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
     return badnesses
 
 
-def find_duplicate_tracks(clip: MovieClip) -> Iterable[DuplicateItem]:
+def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
 
     dup_maxdist2 = DUP_MAXDIST * DUP_MAXDIST
 
@@ -280,7 +287,7 @@ def find_duplicate_tracks(clip: MovieClip) -> Iterable[DuplicateItem]:
     last_frame_index = clip.frame_start + clip.frame_duration - 1
 
     # Map track names to badness scores
-    dups: Dict[Tuple[str, str], DuplicateItem] = {}
+    dups: Dict[Tuple[str, str], Duplicate] = {}
 
     for frame_index in range(first_frame_index, last_frame_index + 1):
         track_coordinates = []
@@ -315,11 +322,8 @@ def find_duplicate_tracks(clip: MovieClip) -> Iterable[DuplicateItem]:
                 if (track1_name, track2_name) in dups:
                     continue
 
-                duplicateItem = DuplicateItem()
-                duplicateItem.track1_name = track1_name
-                duplicateItem.track2_name = track2_name
-                duplicateItem.frame = frame_index
-                dups[(track1_name, track2_name)] = duplicateItem
+                dup = Duplicate(track1_name, track2_name, frame_index)
+                dups[(track1_name, track2_name)] = dup
 
     return dups.values()
 
