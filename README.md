@@ -64,21 +64,27 @@ I have developed this with:
 
 ## Making a New Release
 
-Run `release.sh` and follow instructions.
+1. Make sure the screenshot and description ^ are both up to date and in sync.
+1. Run `release.sh` and follow instructions.
 
 ## TODO
 
-- Announce on BlenderNation
-- Fix user reported issues
-- Publish on Blender Market
-- Profile and see what can easily be sped up
-- Fix the tracks list tooltip, the current text makes no sense: "Active Bad
-  Track / Double click to rename."
+- Remove worst-frame column from the bad-tracks list. The UI is really narrow
+  and the track name sometimes doesn't fit right now. Also, clicking a row will
+  take you to the right frame anyway.
+- Consider duplicate-tracks sort order, which one is best?
+  - Alphabetic order by first track name?
+  - Most commonly duplicated track first?
+  - Pair with largest max-distance first? These need manual fixup.
 - Add a `tox.ini` with:
   - `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
   - `pylint`
   - `black` code formatting, format locally and verify in CI
 - Add a `tox` Github action for PRs and pushes
+- Fix the tracks list tooltip, the current text makes no sense: "Active Bad
+  Track / Double click to rename."
+- Profile and see what can easily be sped up
+- Publish on Blender Market
 
 ### DONE
 
@@ -86,3 +92,6 @@ Run `release.sh` and follow instructions.
 - Make an initial release
 - Document install instructions higher up in this document
 - Ignore locked tracks, assuming they have been manually vetted by a human
+- Announce on BlenderNation
+- Fix user reported issues
+- Add duplicate tracks detection

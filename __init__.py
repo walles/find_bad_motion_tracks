@@ -13,12 +13,20 @@
 
 import bpy
 import time
+import operator
 import statistics
 
-from typing import cast, List, Dict, Iterable
+from typing import Iterable, cast, List, Dict, Optional, Tuple
 from dataclasses import dataclass
 
-from bpy.types import MovieTrackingMarkers, MovieTrackingTrack
+from bpy.types import (
+    MovieClip,
+    MovieTrackingMarker,
+    MovieTrackingMarkers,
+    MovieTrackingTrack,
+    bpy_prop_collection,
+)
+from bpy.types import UILayout, Context, AnyType
 
 bl_info = {
     "name": "Find Bad Tracks",
@@ -35,6 +43,10 @@ bl_info = {
 
 FIND_BAD_TRACKS = "Find Bad Tracks"
 
+# If two points are further apart than this many percent of the image dimensions
+# they are not dups (at least not in this frame).
+DUP_MAXDIST_PERCENT = 1.0
+
 
 @dataclass
 class TrackWithFloat:
@@ -49,8 +61,15 @@ class Badness:
     frame: int
 
 
+@dataclass
+class Duplicate:
+    track1_name: str
+    track2_name: str
+    frame: int
+
+
 class BadnessItem(bpy.types.PropertyGroup):
-    # FIXME: How do we make all of these read-only?
+    # FIXME: How do we make all of these read-only in the UI?
 
     track: bpy.props.StringProperty(  # type: ignore
         name="Track",
@@ -66,28 +85,80 @@ class BadnessItem(bpy.types.PropertyGroup):
     )
 
     frame: bpy.props.IntProperty(  # type: ignore
-        name="Test Property",
+        name="Frame number",
         options={"SKIP_SAVE"},
         min=0,
         description="Frame number of the worst badness score",
     )
 
 
+class DuplicateItem(bpy.types.PropertyGroup):
+    # FIXME: How do we make all of these read-only in the UI?
+
+    track1_name: bpy.props.StringProperty(  # type: ignore
+        name="Tracks",
+        options={"SKIP_SAVE"},
+        description="Overlapping track name 1",
+    )
+
+    track2_name: bpy.props.StringProperty(  # type: ignore
+        name="Tracks",
+        options={"SKIP_SAVE"},
+        description="Overlapping track name 2",
+    )
+
+    frame: bpy.props.IntProperty(  # type: ignore
+        name="Frame number",
+        options={"SKIP_SAVE"},
+        min=0,
+        description="Frame number of the first overlap",
+    )
+
+
 class TRACKING_UL_BadnessItem(bpy.types.UIList):
     def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
+        self,
+        context: Context,
+        layout: UILayout,
+        data: AnyType,
+        item: AnyType,
+        icon: int,
+        active_data: AnyType,
+        active_property: str,
+        index: int = 0,
+        flt_flag: int = 0,
     ):
         # Experiments show that the item is of class BadnessItem
-        track_name = item.track
+        badnessItem = cast(BadnessItem, item)
+
+        track_name = badnessItem.track
         layout.label(text=track_name)
 
         # FIXME: How do we right align this label?
-        badness = item.badness
+        badness = badnessItem.badness
         layout.label(text=f"{badness:.1f}")
 
-        # FIXME: How do we right align this label?
-        frame = item.frame
+        # FIXME: Drop this, the UI is really narrow and clicking the line will
+        # go to the bad frame anyway
+        frame = badnessItem.frame
         layout.label(text=str(frame))
+
+
+class TRACKING_UL_DuplicateItem(bpy.types.UIList):
+    def draw_item(
+        self,
+        context: Context,
+        layout: UILayout,
+        data: AnyType,
+        item: AnyType,
+        icon: int,
+        active_data: AnyType,
+        active_property: str,
+        index: int = 0,
+        flt_flag: int = 0,
+    ):
+        duplicateItem = cast(DuplicateItem, item)
+        layout.label(text=f"{duplicateItem.track1_name} & {duplicateItem.track2_name}")
 
 
 class BadnessCalculator:
@@ -163,6 +234,108 @@ def get_active_clip(context: bpy.types.Context):
     return active.clip
 
 
+def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
+    # For each clip frame except the first...
+    first_frame_index = clip.frame_start
+    last_frame_index = clip.frame_start + clip.frame_duration - 1
+
+    # Map track names to badness scores
+    badnesses: Dict[str, Badness] = {}
+
+    for frame_index in range(first_frame_index + 1, last_frame_index):
+        dx_list: List[TrackWithFloat] = []
+        dy_list: List[TrackWithFloat] = []
+        ddx_list: List[TrackWithFloat] = []
+        ddy_list: List[TrackWithFloat] = []
+
+        tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
+        for track in tracks:
+            markers = cast(MovieTrackingMarkers, track.markers)
+
+            previous_marker = markers.find_frame(frame_index - 1)
+            if previous_marker is None or previous_marker.mute:
+                continue
+
+            marker = markers.find_frame(frame_index)
+            if marker is None or marker.mute:
+                continue
+
+            # How much did this track move X and Y since the previous frame?
+            dx = marker.co[0] - previous_marker.co[0]
+            dy = marker.co[1] - previous_marker.co[1]
+            dx_list.append(TrackWithFloat(track, dx, frame_index))
+            dy_list.append(TrackWithFloat(track, dy, frame_index))
+
+            previous_previous_marker = markers.find_frame(frame_index - 2)
+            if previous_previous_marker is None or previous_previous_marker.mute:
+                continue
+
+            previous_dx = previous_marker.co[0] - previous_previous_marker.co[0]
+            previous_dy = previous_marker.co[1] - previous_previous_marker.co[1]
+            ddx = dx - previous_dx
+            ddy = dy - previous_dy
+            ddx_list.append(TrackWithFloat(track, ddx, frame_index))
+            ddy_list.append(TrackWithFloat(track, ddy, frame_index))
+
+        update_badnesses(badnesses, dx_list)
+        update_badnesses(badnesses, dy_list)
+        update_badnesses(badnesses, ddx_list)
+        update_badnesses(badnesses, ddy_list)
+
+    return badnesses
+
+
+def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
+
+    dup_maxdist_fraction = DUP_MAXDIST_PERCENT / 100.0
+    dup_maxdist2 = dup_maxdist_fraction * dup_maxdist_fraction
+
+    # For each clip frame...
+    first_frame_index = clip.frame_start
+    last_frame_index = clip.frame_start + clip.frame_duration - 1
+
+    # Map track names to badness scores
+    dups: Dict[Tuple[str, str], Duplicate] = {}
+
+    for frame_index in range(first_frame_index, last_frame_index + 1):
+        track_coordinates = []
+
+        tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
+        for track in tracks:
+            markers = cast(MovieTrackingMarkers, track.markers)
+            marker = markers.find_frame(frame_index)
+            if marker is None or marker.mute:
+                continue
+
+            x = marker.co[0]
+            y = marker.co[1]
+
+            track_coordinates.append((x, y, track.name))
+
+        for x1, y1, track1_name in track_coordinates:
+            for x2, y2, track2_name in track_coordinates:
+                if track1_name == track2_name:
+                    continue
+
+                if track1_name > track2_name:
+                    # Require alphabetic order to avoid duplicates
+                    continue
+
+                dx = x2 - x1
+                dy = y2 - y1
+                dist2 = dx * dx + dy * dy
+                if dist2 > dup_maxdist2:
+                    continue
+
+                if (track1_name, track2_name) in dups:
+                    continue
+
+                dup = Duplicate(track1_name, track2_name, frame_index)
+                dups[(track1_name, track2_name)] = dup
+
+    return dups.values()
+
+
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
     """
     Identify bad tracks by looking at how they move relative to other tracks.
@@ -185,56 +358,11 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         return get_active_clip(context) is not None
 
     def execute(self, context: bpy.types.Context):
-        t0 = time.time()
-
         clip = get_active_clip(context)
 
-        # For each clip frame except the first...
-        first_frame_index = clip.frame_start
-        last_frame_index = clip.frame_start + clip.frame_duration - 1
+        t0 = time.time()
 
-        # Map track names to badness scores
-        badnesses: Dict[str, Badness] = {}
-
-        for frame_index in range(first_frame_index + 1, last_frame_index):
-            dx_list: List[TrackWithFloat] = []
-            dy_list: List[TrackWithFloat] = []
-            ddx_list: List[TrackWithFloat] = []
-            ddy_list: List[TrackWithFloat] = []
-
-            tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
-            for track in tracks:
-                markers = cast(MovieTrackingMarkers, track.markers)
-
-                previous_marker = markers.find_frame(frame_index - 1)
-                if previous_marker is None or previous_marker.mute:
-                    continue
-
-                marker = markers.find_frame(frame_index)
-                if marker is None or marker.mute:
-                    continue
-
-                # How much did this track move X and Y since the previous frame?
-                dx = marker.co[0] - previous_marker.co[0]
-                dy = marker.co[1] - previous_marker.co[1]
-                dx_list.append(TrackWithFloat(track, dx, frame_index))
-                dy_list.append(TrackWithFloat(track, dy, frame_index))
-
-                previous_previous_marker = markers.find_frame(frame_index - 2)
-                if previous_previous_marker is None or previous_previous_marker.mute:
-                    continue
-
-                previous_dx = previous_marker.co[0] - previous_previous_marker.co[0]
-                previous_dy = previous_marker.co[1] - previous_previous_marker.co[1]
-                ddx = dx - previous_dx
-                ddy = dy - previous_dy
-                ddx_list.append(TrackWithFloat(track, ddx, frame_index))
-                ddy_list.append(TrackWithFloat(track, ddy, frame_index))
-
-            update_badnesses(badnesses, dx_list)
-            update_badnesses(badnesses, dy_list)
-            update_badnesses(badnesses, ddx_list)
-            update_badnesses(badnesses, ddy_list)
+        badnesses = find_bad_tracks(clip)
 
         bad_tracks_prop = context.edit_movieclip.bad_tracks  # type: ignore
         bad_tracks_prop.clear()
@@ -248,6 +376,21 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
 
         t1 = time.time()
         print(f"Finding bad tracks took {t1 - t0:.2f}s")
+
+        t0 = time.time()
+
+        dups = find_duplicate_tracks(clip)
+
+        duplicate_tracks_prop = context.edit_movieclip.duplicate_tracks  # type: ignore
+        duplicate_tracks_prop.clear()
+        for dup in sorted(dups, key=operator.attrgetter("track1_name", "track2_name")):
+            new_property = duplicate_tracks_prop.add()
+            new_property.track1_name = dup.track1_name
+            new_property.track2_name = dup.track2_name
+            new_property.frame = dup.frame
+
+        t1 = time.time()
+        print(f"Finding duplicate tracks took {t1 - t0:.2f}s")
 
         return {"FINISHED"}
 
@@ -269,12 +412,15 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
+        # Draw the button
         col = layout.column()
         row = col.row()
         row.operator("tracking.find_bad_tracks")
 
-        row = col.row()
-        row.template_list(
+        # Draw the bad-tracks list
+        box = col.box()
+        box.row().label(text="Bad Tracks")
+        box.row().template_list(
             listtype_name="TRACKING_UL_BadnessItem",
             list_id="",
             dataptr=context.edit_movieclip,
@@ -284,12 +430,27 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
             sort_lock=True,
         )
 
+        # Draw a duplicate-tracks list
+        box = col.box()
+        box.row().label(text="Duplicate Tracks")
+        box.row().template_list(
+            listtype_name="TRACKING_UL_DuplicateItem",
+            list_id="",
+            dataptr=context.edit_movieclip,
+            propname="duplicate_tracks",
+            active_dataptr=context.edit_movieclip,
+            active_propname="active_duplicate_tracks",
+            sort_lock=True,
+        )
+
 
 classes = (
     OP_Tracking_find_bad_tracks,
     TRACKING_PT_FindBadTracksPanel,
     TRACKING_UL_BadnessItem,
+    TRACKING_UL_DuplicateItem,
     BadnessItem,
+    DuplicateItem,
 )
 
 
@@ -334,6 +495,81 @@ def on_switch_active_bad_track(
     context.scene.frame_set(badness_item.frame)
 
 
+def get_first_last_frames(track: MovieTrackingTrack) -> Tuple[int, int]:
+    markers_collection = cast(bpy_prop_collection, track.markers)
+    first: Optional[int] = None
+    last: Optional[int] = None
+    for marker in markers_collection.values():
+        marker = cast(MovieTrackingMarker, marker)
+        frame = marker.frame
+        if first is None or frame < first:
+            first = frame
+        if last is None or frame > last:
+            last = frame
+
+    assert first is not None and last is not None
+    return (first, last)
+
+
+def get_front_track(
+    t1: MovieTrackingTrack, t2: MovieTrackingTrack
+) -> MovieTrackingTrack:
+    """Decide which track to put in front of the other"""
+    t1_start, t1_end = get_first_last_frames(t1)
+    t2_start, t2_end = get_first_last_frames(t2)
+
+    len_t1 = t1_end - t1_start
+    len_t2 = t2_end - t2_start
+    if len_t2 < len_t1:
+        return t2
+
+    # t1 is shorter or same length
+    return t1
+
+
+def on_switch_active_duplicate_tracks(
+    self: bpy.types.IntProperty, context: bpy.types.Context
+) -> None:
+    if context.edit_movieclip is None:  # type: ignore
+        return
+
+    active_duplicate_tracks_index: int = context.edit_movieclip.active_duplicate_tracks  # type: ignore
+
+    # Get the list entry from this index
+    duplicate_tracks_collection = context.edit_movieclip.duplicate_tracks  # type: ignore
+    dup_item: DuplicateItem = duplicate_tracks_collection[active_duplicate_tracks_index]
+
+    clip = get_active_clip(context)
+
+    # Get ourselves a reference to the duplicate track objects
+    all_tracks_collection = cast(bpy.types.bpy_prop_collection, clip.tracking.tracks)
+    dup_track1_index = all_tracks_collection.find(dup_item.track1_name)
+    dup_track1: MovieTrackingTrack = all_tracks_collection.values()[dup_track1_index]
+    dup_track2_index = all_tracks_collection.find(dup_item.track2_name)
+    dup_track2: MovieTrackingTrack = all_tracks_collection.values()[dup_track2_index]
+
+    # FIXME: Select only this track in the Tracking Dopesheet editor
+    # Asked here: https://blender.chat/channel/python?msg=6Zx3Nk6NKZMsmkxPy
+
+    # Highlight one of the tracks on the right of the Tracking Clip editor
+    movie_tracking_tracks = cast(bpy.types.MovieTrackingTracks, clip.tracking.tracks)
+    movie_tracking_tracks.active = get_front_track(dup_track1, dup_track2)
+
+    # Select only the duplicate tracks in the Tracking Clip editor
+    bpy.ops.clip.select_all(action="DESELECT")
+    all_tracks_list = cast(List[MovieTrackingTrack], clip.tracking.tracks)
+    for track in all_tracks_list:
+        if track.name in (dup_item.track1_name, dup_item.track2_name):
+            track.select = True
+
+    # Skip to the first overlapping frame
+    #
+    # NOTE: With Blender 2.93.1 the ordering here seems to matter. If you
+    # frame_set() before change_frame() the clip view doesn't update properly.
+    bpy.ops.clip.change_frame(dup_item.frame)
+    context.scene.frame_set(dup_item.frame)
+
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -357,6 +593,21 @@ def register():
         update=on_switch_active_bad_track,
     )
 
+    bpy.types.MovieClip.duplicate_tracks = bpy.props.CollectionProperty(
+        type=DuplicateItem,
+        name="Duplicate Tracks",
+        description="List of duplicate tracks",
+        options={"SKIP_SAVE"},
+    )
+
+    bpy.types.MovieClip.active_duplicate_tracks = bpy.props.IntProperty(
+        name="Active Duplicate Tracks Pair",
+        description="Index of the currently active duplicate tracks pair",
+        default=0,
+        options={"SKIP_SAVE"},
+        update=on_switch_active_duplicate_tracks,
+    )
+
 
 def unregister():
     for cls in classes:
@@ -365,6 +616,8 @@ def unregister():
     # Clear properties.
     del bpy.types.MovieClip.bad_tracks
     del bpy.types.MovieClip.active_bad_track
+    del bpy.types.MovieClip.duplicate_tracks
+    del bpy.types.MovieClip.active_duplicate_tracks
 
 
 if __name__ == "__main__":
