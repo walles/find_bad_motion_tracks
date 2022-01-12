@@ -15,10 +15,11 @@ import bpy
 import time
 import statistics
 
-from typing import cast, List, Dict, Iterable
+from typing import cast, List, Dict
 from dataclasses import dataclass
 
 from bpy.types import MovieTrackingMarkers, MovieTrackingTrack
+from bpy.types import UILayout, Context, AnyType
 
 bl_info = {
     "name": "Find Bad Tracks",
@@ -50,7 +51,7 @@ class Badness:
 
 
 class BadnessItem(bpy.types.PropertyGroup):
-    # FIXME: How do we make all of these read-only?
+    # FIXME: How do we make all of these read-only in the UI?
 
     track: bpy.props.StringProperty(  # type: ignore
         name="Track",
@@ -66,28 +67,74 @@ class BadnessItem(bpy.types.PropertyGroup):
     )
 
     frame: bpy.props.IntProperty(  # type: ignore
-        name="Test Property",
+        name="Frame number",
         options={"SKIP_SAVE"},
         min=0,
         description="Frame number of the worst badness score",
     )
 
 
+class DuplicateItem(bpy.types.PropertyGroup):
+    # FIXME: How do we make all of these read-only in the UI?
+
+    tracks: bpy.props.StringProperty(  # type: ignore
+        name="Tracks",
+        options={"SKIP_SAVE"},
+        description="Overlapping track names",
+    )
+
+    frame: bpy.props.IntProperty(  # type: ignore
+        name="Frame number",
+        options={"SKIP_SAVE"},
+        min=0,
+        description="Frame number of the first overlap",
+    )
+
+
 class TRACKING_UL_BadnessItem(bpy.types.UIList):
     def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
+        self,
+        context: Context,
+        layout: UILayout,
+        data: AnyType,
+        item: AnyType,
+        icon: int,
+        active_data: AnyType,
+        active_property: str,
+        index: int = 0,
+        flt_flag: int = 0,
     ):
         # Experiments show that the item is of class BadnessItem
-        track_name = item.track
+        badnessItem = cast(BadnessItem, item)
+
+        track_name = badnessItem.track
         layout.label(text=track_name)
 
         # FIXME: How do we right align this label?
-        badness = item.badness
+        badness = badnessItem.badness
         layout.label(text=f"{badness:.1f}")
 
         # FIXME: How do we right align this label?
-        frame = item.frame
+        frame = badnessItem.frame
         layout.label(text=str(frame))
+
+
+class TRACKING_UL_DuplicateItem(bpy.types.UIList):
+    def draw_item(
+        self,
+        context: Context,
+        layout: UILayout,
+        data: AnyType,
+        item: AnyType,
+        icon: int,
+        active_data: AnyType,
+        active_property: str,
+        index: int = 0,
+        flt_flag: int = 0,
+    ):
+        # FIXME: Render a DuplicateItem, just like TRACKING_UL_BadnessItem
+        # renders its thing
+        pass
 
 
 class BadnessCalculator:
@@ -185,6 +232,8 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         return get_active_clip(context) is not None
 
     def execute(self, context: bpy.types.Context):
+        # FIXME: Make this method find duplicates as well!
+
         t0 = time.time()
 
         clip = get_active_clip(context)
@@ -291,12 +340,12 @@ class TRACKING_PT_FindBadTracksPanel(bpy.types.Panel):
         box = col.box()
         box.row().label(text="Duplicate Tracks")
         box.row().template_list(
-            listtype_name="TRACKING_UL_BadnessItem",
+            listtype_name="TRACKING_UL_DuplicateItem",
             list_id="",
             dataptr=context.edit_movieclip,
-            propname="bad_tracks",
+            propname="duplicate_tracks",
             active_dataptr=context.edit_movieclip,
-            active_propname="active_bad_track",
+            active_propname="active_duplicate_tracks",
             sort_lock=True,
         )
 
@@ -305,7 +354,9 @@ classes = (
     OP_Tracking_find_bad_tracks,
     TRACKING_PT_FindBadTracksPanel,
     TRACKING_UL_BadnessItem,
+    TRACKING_UL_DuplicateItem,
     BadnessItem,
+    DuplicateItem,
 )
 
 
@@ -350,6 +401,18 @@ def on_switch_active_bad_track(
     context.scene.frame_set(badness_item.frame)
 
 
+def on_switch_active_duplicate_tracks(
+    self: bpy.types.IntProperty, context: bpy.types.Context
+) -> None:
+    # FIXME: Steal code from on_switch_active_bad_track()
+
+    # FIXME: Select our two duplicates and no other tracks
+
+    # FIXME: Skip to the frame where the tracks first overlap
+
+    return
+
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -373,6 +436,21 @@ def register():
         update=on_switch_active_bad_track,
     )
 
+    bpy.types.MovieClip.duplicate_tracks = bpy.props.CollectionProperty(
+        type=DuplicateItem,
+        name="Duplicate Tracks",
+        description="List of duplicate tracks",
+        options={"SKIP_SAVE"},
+    )
+
+    bpy.types.MovieClip.active_duplicate_tracks = bpy.props.IntProperty(
+        name="Active Duplicate Tracks Pair",
+        description="Index of the currently active duplicate tracks pair",
+        default=0,
+        options={"SKIP_SAVE"},
+        update=on_switch_active_duplicate_tracks,
+    )
+
 
 def unregister():
     for cls in classes:
@@ -381,6 +459,8 @@ def unregister():
     # Clear properties.
     del bpy.types.MovieClip.bad_tracks
     del bpy.types.MovieClip.active_bad_track
+    del bpy.types.MovieClip.duplicate_tracks
+    del bpy.types.MovieClip.active_duplicate_tracks
 
 
 if __name__ == "__main__":
