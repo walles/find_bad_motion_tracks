@@ -18,7 +18,7 @@ import statistics
 from typing import cast, List, Dict
 from dataclasses import dataclass
 
-from bpy.types import MovieTrackingMarkers, MovieTrackingTrack
+from bpy.types import MovieClip, MovieTrackingMarkers, MovieTrackingTrack
 from bpy.types import UILayout, Context, AnyType
 
 bl_info = {
@@ -216,6 +216,57 @@ def get_active_clip(context: bpy.types.Context):
     return active.clip
 
 
+def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
+    # For each clip frame except the first...
+    first_frame_index = clip.frame_start
+    last_frame_index = clip.frame_start + clip.frame_duration - 1
+
+    # Map track names to badness scores
+    badnesses: Dict[str, Badness] = {}
+
+    for frame_index in range(first_frame_index + 1, last_frame_index):
+        dx_list: List[TrackWithFloat] = []
+        dy_list: List[TrackWithFloat] = []
+        ddx_list: List[TrackWithFloat] = []
+        ddy_list: List[TrackWithFloat] = []
+
+        tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
+        for track in tracks:
+            markers = cast(MovieTrackingMarkers, track.markers)
+
+            previous_marker = markers.find_frame(frame_index - 1)
+            if previous_marker is None or previous_marker.mute:
+                continue
+
+            marker = markers.find_frame(frame_index)
+            if marker is None or marker.mute:
+                continue
+
+            # How much did this track move X and Y since the previous frame?
+            dx = marker.co[0] - previous_marker.co[0]
+            dy = marker.co[1] - previous_marker.co[1]
+            dx_list.append(TrackWithFloat(track, dx, frame_index))
+            dy_list.append(TrackWithFloat(track, dy, frame_index))
+
+            previous_previous_marker = markers.find_frame(frame_index - 2)
+            if previous_previous_marker is None or previous_previous_marker.mute:
+                continue
+
+            previous_dx = previous_marker.co[0] - previous_previous_marker.co[0]
+            previous_dy = previous_marker.co[1] - previous_previous_marker.co[1]
+            ddx = dx - previous_dx
+            ddy = dy - previous_dy
+            ddx_list.append(TrackWithFloat(track, ddx, frame_index))
+            ddy_list.append(TrackWithFloat(track, ddy, frame_index))
+
+        update_badnesses(badnesses, dx_list)
+        update_badnesses(badnesses, dy_list)
+        update_badnesses(badnesses, ddx_list)
+        update_badnesses(badnesses, ddy_list)
+
+    return badnesses
+
+
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
     """
     Identify bad tracks by looking at how they move relative to other tracks.
@@ -244,52 +295,7 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
 
         clip = get_active_clip(context)
 
-        # For each clip frame except the first...
-        first_frame_index = clip.frame_start
-        last_frame_index = clip.frame_start + clip.frame_duration - 1
-
-        # Map track names to badness scores
-        badnesses: Dict[str, Badness] = {}
-
-        for frame_index in range(first_frame_index + 1, last_frame_index):
-            dx_list: List[TrackWithFloat] = []
-            dy_list: List[TrackWithFloat] = []
-            ddx_list: List[TrackWithFloat] = []
-            ddy_list: List[TrackWithFloat] = []
-
-            tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
-            for track in tracks:
-                markers = cast(MovieTrackingMarkers, track.markers)
-
-                previous_marker = markers.find_frame(frame_index - 1)
-                if previous_marker is None or previous_marker.mute:
-                    continue
-
-                marker = markers.find_frame(frame_index)
-                if marker is None or marker.mute:
-                    continue
-
-                # How much did this track move X and Y since the previous frame?
-                dx = marker.co[0] - previous_marker.co[0]
-                dy = marker.co[1] - previous_marker.co[1]
-                dx_list.append(TrackWithFloat(track, dx, frame_index))
-                dy_list.append(TrackWithFloat(track, dy, frame_index))
-
-                previous_previous_marker = markers.find_frame(frame_index - 2)
-                if previous_previous_marker is None or previous_previous_marker.mute:
-                    continue
-
-                previous_dx = previous_marker.co[0] - previous_previous_marker.co[0]
-                previous_dy = previous_marker.co[1] - previous_previous_marker.co[1]
-                ddx = dx - previous_dx
-                ddy = dy - previous_dy
-                ddx_list.append(TrackWithFloat(track, ddx, frame_index))
-                ddy_list.append(TrackWithFloat(track, ddy, frame_index))
-
-            update_badnesses(badnesses, dx_list)
-            update_badnesses(badnesses, dy_list)
-            update_badnesses(badnesses, ddx_list)
-            update_badnesses(badnesses, ddy_list)
+        badnesses = find_bad_tracks(clip)
 
         bad_tracks_prop = context.edit_movieclip.bad_tracks  # type: ignore
         bad_tracks_prop.clear()
