@@ -71,6 +71,10 @@ Run `release.sh` and follow instructions.
 - Remove worst-frame column from the bad-tracks list. The UI is really narrow
   and the track name sometimes doesn't fit right now. Also, clicking a row will
   take you to the right frame anyway.
+- Consider duplicate-tracks sort order, which one is best?
+  - Alphabetic order by first track name?
+  - Most commonly duplicated track first?
+  - Pair with largest max-distance first? These need manual fixup.
 - Add a `tox.ini` with:
   - `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
   - `pylint`

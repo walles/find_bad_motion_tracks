@@ -16,10 +16,16 @@ import time
 import operator
 import statistics
 
-from typing import Iterable, cast, List, Dict, Set, Tuple
+from typing import Iterable, cast, List, Dict, Optional, Tuple
 from dataclasses import dataclass
 
-from bpy.types import MovieClip, MovieTrackingMarkers, MovieTrackingTrack
+from bpy.types import (
+    MovieClip,
+    MovieTrackingMarker,
+    MovieTrackingMarkers,
+    MovieTrackingTrack,
+    bpy_prop_collection,
+)
 from bpy.types import UILayout, Context, AnyType
 
 bl_info = {
@@ -489,6 +495,38 @@ def on_switch_active_bad_track(
     context.scene.frame_set(badness_item.frame)
 
 
+def get_first_last_frames(track: MovieTrackingTrack) -> Tuple[int, int]:
+    markers_collection = cast(bpy_prop_collection, track.markers)
+    first: Optional[int] = None
+    last: Optional[int] = None
+    for marker in markers_collection.values():
+        marker = cast(MovieTrackingMarker, marker)
+        frame = marker.frame
+        if first is None or frame < first:
+            first = frame
+        if last is None or frame > last:
+            last = frame
+
+    assert first is not None and last is not None
+    return (first, last)
+
+
+def get_front_track(
+    t1: MovieTrackingTrack, t2: MovieTrackingTrack
+) -> MovieTrackingTrack:
+    """Decide which track to put in front of the other"""
+    t1_start, t1_end = get_first_last_frames(t1)
+    t2_start, t2_end = get_first_last_frames(t2)
+
+    len_t1 = t1_end - t1_start
+    len_t2 = t2_end - t2_start
+    if len_t2 < len_t1:
+        return t2
+
+    # t1 is shorter or same length
+    return t1
+
+
 def on_switch_active_duplicate_tracks(
     self: bpy.types.IntProperty, context: bpy.types.Context
 ) -> None:
@@ -506,16 +544,16 @@ def on_switch_active_duplicate_tracks(
     # Get ourselves a reference to the duplicate track objects
     all_tracks_collection = cast(bpy.types.bpy_prop_collection, clip.tracking.tracks)
     dup_track1_index = all_tracks_collection.find(dup_item.track1_name)
-    dup_track1 = all_tracks_collection.values()[dup_track1_index]
+    dup_track1: MovieTrackingTrack = all_tracks_collection.values()[dup_track1_index]
     dup_track2_index = all_tracks_collection.find(dup_item.track2_name)
-    dup_track2 = all_tracks_collection.values()[dup_track2_index]
+    dup_track2: MovieTrackingTrack = all_tracks_collection.values()[dup_track2_index]
 
     # FIXME: Select only this track in the Tracking Dopesheet editor
     # Asked here: https://blender.chat/channel/python?msg=6Zx3Nk6NKZMsmkxPy
 
     # Highlight one of the tracks on the right of the Tracking Clip editor
     movie_tracking_tracks = cast(bpy.types.MovieTrackingTracks, clip.tracking.tracks)
-    movie_tracking_tracks.active = dup_track1
+    movie_tracking_tracks.active = get_front_track(dup_track1, dup_track2)
 
     # Select only the duplicate tracks in the Tracking Clip editor
     bpy.ops.clip.select_all(action="DESELECT")
