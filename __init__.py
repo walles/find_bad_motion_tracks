@@ -36,9 +36,9 @@ bl_info = {
 
 FIND_BAD_TRACKS = "Find Bad Tracks"
 
-# If two points are further apart than this number of pixels they are not dups
-# (at least not in this frame).
-DUP_MAXDIST = 10.0
+# If two points are further apart than this many percent of the image dimensions
+# they are not dups (at least not in this frame).
+DUP_MAXDIST_PERCENT = 1.0
 
 
 @dataclass
@@ -280,7 +280,8 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
 
 def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
 
-    dup_maxdist2 = DUP_MAXDIST * DUP_MAXDIST
+    dup_maxdist_fraction = DUP_MAXDIST_PERCENT / 100.0
+    dup_maxdist2 = dup_maxdist_fraction * dup_maxdist_fraction
 
     # For each clip frame...
     first_frame_index = clip.frame_start
