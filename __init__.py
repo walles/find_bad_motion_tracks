@@ -15,7 +15,7 @@ import bpy
 import time
 import statistics
 
-from typing import cast, List, Dict
+from typing import Iterable, cast, List, Dict, Set, Tuple
 from dataclasses import dataclass
 
 from bpy.types import MovieClip, MovieTrackingMarkers, MovieTrackingTrack
@@ -35,6 +35,10 @@ bl_info = {
 }
 
 FIND_BAD_TRACKS = "Find Bad Tracks"
+
+# If two points are further apart than this number of pixels they are not dups
+# (at least not in this frame).
+DUP_MAXDIST = 10.0
 
 
 @dataclass
@@ -77,13 +81,13 @@ class BadnessItem(bpy.types.PropertyGroup):
 class DuplicateItem(bpy.types.PropertyGroup):
     # FIXME: How do we make all of these read-only in the UI?
 
-    track1: bpy.props.StringProperty(  # type: ignore
+    track1_name: bpy.props.StringProperty(  # type: ignore
         name="Tracks",
         options={"SKIP_SAVE"},
         description="Overlapping track name 1",
     )
 
-    track2: bpy.props.StringProperty(  # type: ignore
+    track2_name: bpy.props.StringProperty(  # type: ignore
         name="Tracks",
         options={"SKIP_SAVE"},
         description="Overlapping track name 2",
@@ -140,7 +144,7 @@ class TRACKING_UL_DuplicateItem(bpy.types.UIList):
         flt_flag: int = 0,
     ):
         duplicateItem = cast(DuplicateItem, item)
-        layout.label(f"{duplicateItem.track1} & {duplicateItem.track2}")
+        layout.label(f"{duplicateItem.track1_name} & {duplicateItem.track2_name}")
 
 
 class BadnessCalculator:
@@ -267,6 +271,59 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
     return badnesses
 
 
+def find_duplicate_tracks(clip: MovieClip) -> Iterable[DuplicateItem]:
+
+    dup_maxdist2 = DUP_MAXDIST * DUP_MAXDIST
+
+    # For each clip frame...
+    first_frame_index = clip.frame_start
+    last_frame_index = clip.frame_start + clip.frame_duration - 1
+
+    # Map track names to badness scores
+    dups: Dict[Tuple[str, str], DuplicateItem] = {}
+
+    for frame_index in range(first_frame_index, last_frame_index + 1):
+        track_coordinates = []
+
+        tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
+        for track in tracks:
+            markers = cast(MovieTrackingMarkers, track.markers)
+            marker = markers.find_frame(frame_index)
+            if marker is None or marker.mute:
+                continue
+
+            x = marker.co[0]
+            y = marker.co[1]
+
+            track_coordinates.append((x, y, track.name))
+
+        for x1, y1, track1_name in track_coordinates:
+            for x2, y2, track2_name in track_coordinates:
+                if track1_name == track2_name:
+                    continue
+
+                if track1_name > track2_name:
+                    # Require alphabetic order to avoid duplicates
+                    continue
+
+                dx = x2 - x1
+                dy = y2 - y1
+                dist2 = dx * dx + dy * dy
+                if dist2 > dup_maxdist2:
+                    continue
+
+                if (track1_name, track2_name) in dups:
+                    continue
+
+                duplicateItem = DuplicateItem()
+                duplicateItem.track1_name = track1_name
+                duplicateItem.track2_name = track2_name
+                duplicateItem.frame = frame_index
+                dups[(track1_name, track2_name)] = duplicateItem
+
+    return dups.values()
+
+
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
     """
     Identify bad tracks by looking at how they move relative to other tracks.
@@ -289,11 +346,9 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         return get_active_clip(context) is not None
 
     def execute(self, context: bpy.types.Context):
-        # FIXME: Make this method find duplicates as well!
+        clip = get_active_clip(context)
 
         t0 = time.time()
-
-        clip = get_active_clip(context)
 
         badnesses = find_bad_tracks(clip)
 
@@ -309,6 +364,21 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
 
         t1 = time.time()
         print(f"Finding bad tracks took {t1 - t0:.2f}s")
+
+        t0 = time.time()
+
+        dups = find_duplicate_tracks(clip)
+
+        duplicate_tracks_prop = context.edit_movieclip.duplicate_tracks  # type: ignore
+        duplicate_tracks_prop.clear()
+        for dup in dups:  # FIXME: Sort dups by track1 name or whatever makes sense
+            new_property = duplicate_tracks_prop.add()
+            new_property.track1_name = dup.track1_name
+            new_property.track2_name = dup.track2_name
+            new_property.frame = dup.frame
+
+        t1 = time.time()
+        print(f"Finding duplicate tracks took {t1 - t0:.2f}s")
 
         return {"FINISHED"}
 
