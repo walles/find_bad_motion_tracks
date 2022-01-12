@@ -13,6 +13,7 @@
 
 import bpy
 import time
+import operator
 import statistics
 
 from typing import Iterable, cast, List, Dict, Set, Tuple
@@ -376,7 +377,7 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
 
         duplicate_tracks_prop = context.edit_movieclip.duplicate_tracks  # type: ignore
         duplicate_tracks_prop.clear()
-        for dup in dups:  # FIXME: Sort dups by track1 name or whatever makes sense
+        for dup in sorted(dups, key=operator.attrgetter("track1_name", "track2_name")):
             new_property = duplicate_tracks_prop.add()
             new_property.track1_name = dup.track1_name
             new_property.track2_name = dup.track2_name
