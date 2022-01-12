@@ -77,10 +77,16 @@ class BadnessItem(bpy.types.PropertyGroup):
 class DuplicateItem(bpy.types.PropertyGroup):
     # FIXME: How do we make all of these read-only in the UI?
 
-    tracks: bpy.props.StringProperty(  # type: ignore
+    track1: bpy.props.StringProperty(  # type: ignore
         name="Tracks",
         options={"SKIP_SAVE"},
-        description="Overlapping track names",
+        description="Overlapping track name 1",
+    )
+
+    track2: bpy.props.StringProperty(  # type: ignore
+        name="Tracks",
+        options={"SKIP_SAVE"},
+        description="Overlapping track name 2",
     )
 
     frame: bpy.props.IntProperty(  # type: ignore
@@ -133,9 +139,8 @@ class TRACKING_UL_DuplicateItem(bpy.types.UIList):
         index: int = 0,
         flt_flag: int = 0,
     ):
-        # FIXME: Render a DuplicateItem, just like TRACKING_UL_BadnessItem
-        # renders its thing
-        pass
+        duplicateItem = cast(DuplicateItem, item)
+        layout.label(f"{duplicateItem.track1} & {duplicateItem.track2}")
 
 
 class BadnessCalculator:
