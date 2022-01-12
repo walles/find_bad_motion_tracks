@@ -70,9 +70,6 @@ I have developed this with:
 
 ## TODO
 
-- Remove worst-frame column from the bad-tracks list. The UI is really narrow
-  and the track name sometimes doesn't fit right now. Also, clicking a row will
-  take you to the right frame anyway.
 - Consider duplicate-tracks sort order, which one is best?
   - Alphabetic order by first track name?
   - Most commonly duplicated track first?
@@ -96,3 +93,4 @@ I have developed this with:
 - Announce on BlenderNation
 - Fix user reported issues
 - Add duplicate tracks detection
+- Remove worst-frame column from the bad-tracks list.
