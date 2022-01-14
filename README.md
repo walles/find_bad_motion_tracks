@@ -71,7 +71,7 @@ I have developed this with:
 ## TODO
 
 - Add a `tox.ini` with:
-  - `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
+  - OK: `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
   - `pylint`
   - `black` code formatting, format locally and verify in CI
 - Add a `tox` Github action for PRs and pushes
