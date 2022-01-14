@@ -70,10 +70,6 @@ I have developed this with:
 
 ## TODO
 
-- Add a `tox.ini` with:
-  - OK: `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
-  - OK: `pylint`
-  - `black` code formatting, format locally and verify in CI
 - Add a `tox` Github action for PRs and pushes
 - Fix the tracks list tooltips, the current ones make no sense: "Active Bad
   Track / Double click to rename."
@@ -92,3 +88,5 @@ I have developed this with:
 - Remove worst-frame column from the bad-tracks list.
 - Properly deselect unrelated tracks when switching between duplicate track
   pairs in the UI
+- Add a `tox.ini` with `mypy`, `pylint` and `black` code formatting. Black
+  formats locally and verifies in CI.
