@@ -70,8 +70,6 @@ I have developed this with:
 
 ## TODO
 
-- Properly deselect unrelated tracks when switching between duplicate track
-  pairs in the UI
 - Add a `tox.ini` with:
   - `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
   - `pylint`
@@ -92,3 +90,5 @@ I have developed this with:
 - Fix user reported issues
 - Add duplicate tracks detection
 - Remove worst-frame column from the bad-tracks list.
+- Properly deselect unrelated tracks when switching between duplicate track
+  pairs in the UI

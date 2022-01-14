@@ -490,12 +490,10 @@ def on_switch_active_bad_track(
     movie_tracking_tracks = cast(bpy.types.MovieTrackingTracks, clip.tracking.tracks)
     movie_tracking_tracks.active = bad_track
 
-    # Select only the clicked track in the Tracking Clip editor
-    bpy.ops.clip.select_all(action="DESELECT")
+    # Select only the clicked track and no others in the Tracking Clip editor
     all_tracks_list = cast(List[MovieTrackingTrack], clip.tracking.tracks)
     for track in all_tracks_list:
-        if track.name == badness_item.track:
-            track.select = True
+        track.select = track.name == badness_item.track
 
     # Skip to the worst frame
     #
@@ -565,12 +563,10 @@ def on_switch_active_duplicate_tracks(
     movie_tracking_tracks = cast(bpy.types.MovieTrackingTracks, clip.tracking.tracks)
     movie_tracking_tracks.active = get_front_track(dup_track1, dup_track2)
 
-    # Select only the duplicate tracks in the Tracking Clip editor
-    bpy.ops.clip.select_all(action="DESELECT")
+    # Select only the duplicate tracks in the Tracking Clip editor and no others
     all_tracks_list = cast(List[MovieTrackingTrack], clip.tracking.tracks)
     for track in all_tracks_list:
-        if track.name in (dup_item.track1_name, dup_item.track2_name):
-            track.select = True
+        track.select = track.name in (dup_item.track1_name, dup_item.track2_name)
 
     # Skip to the first overlapping frame
     #
