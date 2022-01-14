@@ -465,7 +465,7 @@ classes = (
 
 
 def on_switch_active_bad_track(
-    self: bpy.types.IntProperty, context: bpy.types.Context
+    _: bpy.types.IntProperty, context: bpy.types.Context
 ) -> None:
     if context.edit_movieclip is None:  # type: ignore
         return
@@ -536,7 +536,7 @@ def get_front_track(
 
 
 def on_switch_active_duplicate_tracks(
-    self: bpy.types.IntProperty, context: bpy.types.Context
+    _: bpy.types.IntProperty, context: bpy.types.Context
 ) -> None:
     if context.edit_movieclip is None:  # type: ignore
         return

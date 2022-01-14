@@ -72,7 +72,7 @@ I have developed this with:
 
 - Add a `tox.ini` with:
   - OK: `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
-  - `pylint`
+  - OK: `pylint`
   - `black` code formatting, format locally and verify in CI
 - Add a `tox` Github action for PRs and pushes
 - Fix the tracks list tooltips, the current ones make no sense: "Active Bad
