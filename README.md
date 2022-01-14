@@ -70,16 +70,14 @@ I have developed this with:
 
 ## TODO
 
-- Consider duplicate-tracks sort order, which one is best?
-  - Alphabetic order by first track name?
-  - Most commonly duplicated track first?
-  - Pair with largest max-distance first? These need manual fixup.
+- Properly deselect unrelated tracks when switching between duplicate track
+  pairs in the UI
 - Add a `tox.ini` with:
   - `mypy` after <https://github.com/nutti/fake-bpy-module/issues/92> gets fixed
   - `pylint`
   - `black` code formatting, format locally and verify in CI
 - Add a `tox` Github action for PRs and pushes
-- Fix the tracks list tooltip, the current text makes no sense: "Active Bad
+- Fix the tracks list tooltips, the current ones make no sense: "Active Bad
   Track / Double click to rename."
 - Profile and see what can easily be sped up
 - Publish on Blender Market
