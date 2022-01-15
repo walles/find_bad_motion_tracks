@@ -25,15 +25,31 @@ by a human.
 ## Usage Instructions
 
 1. Follow the Installation Instructions `^` for how to install and enable this addon
+
 1. Do some motion tracking, collect some tracks
+
 1. In the Motion Tracking workspace, Movie Clip Editor on the middle left of
-   your screen, select the <kbd>Track</kbd> tab, expand <kbd>Find Bad Tracks</kbd> (you may have to
-   scroll down to see this section) and press the <kbd>Find Bad Tracks</kbd> button
-1. A list of tracks will now be displayed just below that button, with the worst
-   frame number for each track and its badness score at that point.
-1. Clicking a track in the list will select that track in the clip editor and
-   take you to the worst frame. Stepping a frame left will show how the track
-   skips / slides.
+   your screen, select the <kbd>Track</kbd> tab, expand <kbd>Find Bad
+   Tracks</kbd> (you may have to scroll down to see this section) and press the
+   <kbd>Find Bad Tracks</kbd> button.
+
+   At about 400 tracks and 600 frames the computation takes 5s-10s on my
+   machine.
+
+1. A list of Bad Tracks will now be displayed just below that button, with each
+   track's badness score next to it.
+
+   Clicking a track in the list will select that track in the clip editor and
+   take you to the worst frame. Stepping a few frames left or right will show
+   how the track skips / slides.
+
+1. Another list of Duplicate Tracks comes below the Bad Tracks list. This list
+   contains track pairs that come close at some point of their lifetimes. The
+   most divergent track pairs are at the top of this list.
+
+   Clicking a track pair in this list will take you to a frame where the tracks
+   overlap. Stepping a few frames left or right will show you if the tracks
+   start diverging. If they do, (at least) one of the tracks are likely bad!
 
 ![Example usage](example.png 'Example usage')
 
