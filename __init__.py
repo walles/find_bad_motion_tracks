@@ -45,7 +45,7 @@ FIND_BAD_TRACKS = "Find Bad Tracks"
 
 # If two points are further apart than this many percent of the image dimensions
 # they are not dups (at least not in this frame).
-DUP_MAXDIST_PERCENT = 1.0
+DUP_MAXDIST_PERCENT = 0.5
 
 
 @dataclass
