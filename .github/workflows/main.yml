@@ -6,9 +6,9 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -31,8 +31,8 @@ jobs:
         uses: ymyzk/run-tox-gh-actions@v0.1
         with:
           # Version specifier (PEP 440) for tox
-          tox-version: 3.24.5
+          tox-version: '==3.24.5'
           # Version specifier (PEP 440) for tox-gh-actions
-          tox-gh-actions-version: v2.9.1 
+          tox-gh-actions-version: '==v2.9.1'
           # Working directory to run tox
           working-directory: .
