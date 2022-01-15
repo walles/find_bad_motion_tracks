@@ -77,7 +77,6 @@ I have developed this with:
 
 ## TODO
 
-- Add a `tox` Github action for PRs and pushes
 - Fix the tracks list tooltips, the current ones make no sense: "Active Bad
   Track / Double click to rename."
 - Profile and see what can easily be sped up
@@ -97,3 +96,4 @@ I have developed this with:
   pairs in the UI
 - Add a `tox.ini` with `mypy`, `pylint` and `black` code formatting. Black
   formats locally and verifies in CI.
+- Add a `tox` Github action for PRs and pushes
