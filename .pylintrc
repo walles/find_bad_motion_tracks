@@ -11,4 +11,5 @@ disable=
     too-many-arguments,
     too-few-public-methods,
     too-many-locals,
+    too-many-instance-attributes,
     assignment-from-no-return,  # Happens because of bpy stubs layout lack return statements

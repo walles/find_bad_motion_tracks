@@ -61,20 +61,51 @@ class Badness:
     frame: int
 
 
-@dataclass
 class Duplicate:
-    track1_name: str
-    track2_name: str
+    dup_maxdist_fraction = DUP_MAXDIST_PERCENT / 100.0
+    dup_maxdist2 = dup_maxdist_fraction * dup_maxdist_fraction
 
-    # Frame number where the overlap starts
-    frame: int
+    def __init__(
+        self, track1_name: str, track2_name: str, frame_number: int, distance2: float
+    ) -> None:
+        self.track1_name = track1_name
+        self.track2_name = track2_name
+        self.maxdist2 = distance2
 
-    # Track distances at their closest point
-    mindistance2: float
+        self.first_common_frame = frame_number
+        self.last_common_frame = frame_number
 
-    # The furthest apart these tracks are. Best case if the tracks are dups is
-    # that this number is 0.0.
-    maxdistance2: float
+        self.first_overlapping_frame: Optional[int] = None
+        self.last_overlapping_frame: Optional[int] = None
+
+        self.update(frame_number, distance2)
+
+    def update(self, frame_number: int, distance2: float) -> None:
+        if distance2 > self.maxdist2:
+            self.maxdist2 = distance2
+
+        self.last_common_frame = frame_number
+
+        if distance2 > Duplicate.dup_maxdist2:
+            return
+
+        # Tracks are overlapping
+        if self.first_overlapping_frame is None:
+            self.first_overlapping_frame = frame_number
+        self.last_overlapping_frame = frame_number
+
+    def are_dups(self) -> bool:
+        return self.first_overlapping_frame is not None
+
+    def most_interesting_frame(self) -> int:
+        assert self.first_overlapping_frame is not None
+        assert self.last_overlapping_frame is not None
+
+        if self.last_overlapping_frame < self.last_common_frame:
+            # We stop overlapping and drift apart
+            return self.last_overlapping_frame
+
+        return self.first_overlapping_frame
 
 
 class BadnessItem(bpy.types.PropertyGroup):
@@ -291,9 +322,6 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
 
 def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
 
-    dup_maxdist_fraction = DUP_MAXDIST_PERCENT / 100.0
-    dup_maxdist2 = dup_maxdist_fraction * dup_maxdist_fraction
-
     # For each clip frame...
     first_frame_index = clip.frame_start
     last_frame_index = clip.frame_start + clip.frame_duration - 1
@@ -320,6 +348,11 @@ def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
             for x2, y2, track2_name in track_coordinates:
                 if track1_name >= track2_name:
                     # Require alphabetic order to avoid duplicates
+                    #
+                    # FIXME: It should be possible to make these nested loops
+                    # twice as fast by ensuring the tracks are sorted in name
+                    # order and doing "break" here under the right
+                    # circumstances.
                     continue
 
                 dx = x2 - x1
@@ -329,20 +362,12 @@ def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
                 key = (track1_name, track2_name)
                 dup = dups.get(key)
                 if dup is None:
-                    dup = Duplicate(track1_name, track2_name, frame_index, dist2, dist2)
+                    dup = Duplicate(track1_name, track2_name, frame_index, dist2)
                     dups[key] = dup
-
-                if dist2 > dup.maxdistance2:
-                    # Note the frame where the tracks are as far apart as
-                    # possible. This should be the most problematic frame.
-                    dup.frame = frame_index
-                    dup.maxdistance2 = dist2
-
-                if dist2 < dup.mindistance2:
-                    dup.mindistance2 = dist2
+                dup.update(frame_index, dist2)
 
     # Return the track pairs that come close enough at some point
-    return filter(lambda dup: dup.mindistance2 <= dup_maxdist2, dups.values())
+    return filter(lambda dup: dup.are_dups(), dups.values())
 
 
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
@@ -393,11 +418,11 @@ class OP_Tracking_find_bad_tracks(bpy.types.Operator):
         duplicate_tracks_prop = context.edit_movieclip.duplicate_tracks  # type: ignore
         duplicate_tracks_prop.clear()
 
-        for dup in sorted(dups, key=operator.attrgetter("maxdistance2"), reverse=True):
+        for dup in sorted(dups, key=operator.attrgetter("maxdist2"), reverse=True):
             new_property = duplicate_tracks_prop.add()
             new_property.track1_name = dup.track1_name
             new_property.track2_name = dup.track2_name
-            new_property.frame = dup.frame
+            new_property.frame = dup.most_interesting_frame()
 
         t1 = time.time()
         print(f"Finding duplicate tracks took {t1 - t0:.2f}s")
