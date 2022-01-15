@@ -47,6 +47,9 @@ by a human.
    contains track pairs that come close at some point of their lifetimes. The
    most divergent track pairs are at the top of this list.
 
+   At the bottom of the list you will find tracks that overlap tightly without
+   diverging.
+
    Clicking a track pair in this list will take you to a frame where the tracks
    overlap. Stepping a few frames left or right will show you if the tracks
    start diverging. If they do, (at least) one of the tracks are likely bad!
