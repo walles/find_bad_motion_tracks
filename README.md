@@ -56,6 +56,13 @@ functionality ([source](https://github.com/blender/blender/blob/04c75c5ce7699a15
 
 ## Development
 
+Use [`tox`](https://tox.wiki/en/latest/install.html) to verify your code before
+committing / PRing:
+
+```
+tox
+```
+
 I have developed this with:
 
 - [Visual Studio Code](https://code.visualstudio.com/) with its [Blender Development
