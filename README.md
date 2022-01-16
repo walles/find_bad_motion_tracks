@@ -101,6 +101,25 @@ I have developed this with:
 - Profile and see what can easily be sped up
 - Publish on Blender Market
 
+## Next Gen
+
+The current badness algorithm works well when all tracks move in the same
+direction (camera pans).
+
+But doesn't work at all when the camera zooms or rotates.
+
+What about this then?
+
+1. Compute the (2D) transformation matrix between two frames
+1. For each marker, check how far it is from its computed value given that
+   matrix
+
+That should work for zooming and rotating camera motion as well. Also, we could
+check the whole matrix and see if it makes sense, if the whole image just gets
+narrower for example that's probably wrong.
+
+Inspirational code here: <https://stackoverflow.com/a/20555267/473672>
+
 ### DONE
 
 - Document a release process
