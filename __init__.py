@@ -47,6 +47,9 @@ FIND_BAD_TRACKS = "Find Bad Tracks"
 # they are not dups (at least not in this frame).
 DUP_MAXDIST_PERCENT = 0.5
 
+# Anything within this percentile will get a badness score <= 1
+PERCENTILE = 80
+
 
 @dataclass
 class TrackWithFloat:
@@ -204,12 +207,12 @@ class BadnessCalculator:
         # has likely locked them because those tracks are known good?
         median = statistics.median(map(lambda movement: movement.number, movements))
 
-        # For a 10 item list, this will be 8
-        percentile_count = (len(movements) * 4) // 5
+        # With PERCENTILE at 80, for a 10 item list, this will be 8
+        percentile_count = (len(movements) * PERCENTILE) // 100
         assert 0 < percentile_count < len(movements)
 
-        # For a 10 item list, with indices 0-9, this will be 7, skipping the two
-        # last ones.
+        # With PERCENTILE at 80, for a 10 item list, with indices 0-9, this will
+        # be 7, skipping the two last ones.
         percentile_index = percentile_count - 1
 
         distance = sorted(
@@ -222,6 +225,9 @@ class BadnessCalculator:
     def compute_badness_score(self, movement: TrackWithFloat) -> float:
         # Figure out how much this track moved compared to the median and the
         # movement wiggle room.
+        if self.distance == 0:
+            return 0.0
+
         return abs(movement.number - self.median) / self.distance
 
 
@@ -263,10 +269,58 @@ def update_badnesses(
         badnesses[movement.track.name] = Badness(badness_score, movement.blame_frame)
 
 
-def get_active_clip(context: bpy.types.Context):
-    spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
-    active = cast(bpy.types.SpaceClipEditor, spaces.active)
-    return active.clip
+def shape_change_amount(
+    previous_marker: MovieTrackingMarker, marker: MovieTrackingMarker
+) -> float:
+    """How much did the corners of the marker move between these frames?"""
+    assert len(previous_marker.pattern_corners) == 4
+    assert len(marker.pattern_corners) == 4
+
+    dx = 0.0
+    dy = 0.0
+    for i in range(0, 4):
+        # # type ignore because of:
+        # https://github.com/nutti/fake-bpy-module/issues/95
+        previous_x: float = previous_marker.pattern_corners[i][0]  # type: ignore
+        previous_y: float = previous_marker.pattern_corners[i][1]  # type: ignore
+        x: float = marker.pattern_corners[i][0]  # type: ignore
+        y: float = marker.pattern_corners[i][1]  # type: ignore
+        dx += abs(x - previous_x)
+        dy += abs(y - previous_y)
+
+    return dx + dy
+
+
+def combine_badnesses(*args: Dict[str, Badness]) -> Dict[str, Badness]:
+    """
+    Scale each collection so that the 80th percentile is at 1.0. Then for
+    each track mentioned, pick the highest datapoint out of any collection.
+    """
+
+    with_percentile_scores: List[Tuple[Dict[str, Badness], float]] = []
+    for track_to_badness in args:
+        if len(track_to_badness) < 1:
+            continue
+        percentile = sorted(
+            map(lambda badness: badness.amount, track_to_badness.values())
+        )[(len(track_to_badness) * PERCENTILE) // 100]
+
+        with_percentile_scores.append((track_to_badness, percentile))
+
+    # Join up the with_percentile_scores tuples into a resulting dict
+    combined: Dict[str, Badness] = {}
+    for badnesses, percentile in with_percentile_scores:
+        for track, badness in badnesses.items():
+            to_beat_amount = 0.0
+            to_beat = combined.get(track)
+            if to_beat is not None:
+                to_beat_amount = to_beat.amount
+
+            adjusted_amount = badness.amount / percentile
+            if adjusted_amount > to_beat_amount:
+                combined[track] = Badness(adjusted_amount, badness.frame)
+
+    return combined
 
 
 def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
@@ -275,7 +329,13 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
     last_frame_index = clip.frame_start + clip.frame_duration - 1
 
     # Map track names to badness scores
-    badnesses: Dict[str, Badness] = {}
+    dx_badnesses: Dict[str, Badness] = {}
+    dy_badnesses: Dict[str, Badness] = {}
+    ddx_badnesses: Dict[str, Badness] = {}
+    ddy_badnesses: Dict[str, Badness] = {}
+
+    # Map track names to marker shape change amounts
+    shape_badnesses: Dict[str, Badness] = {}
 
     for frame_index in range(first_frame_index + 1, last_frame_index):
         dx_list: List[TrackWithFloat] = []
@@ -295,6 +355,14 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
             if marker is None or marker.mute:
                 continue
 
+            highest_shape_change = shape_badnesses.get(track.name, None)
+            shape_change = shape_change_amount(previous_marker, marker)
+            if (
+                highest_shape_change is None
+                or shape_change > highest_shape_change.amount
+            ):
+                shape_badnesses[track.name] = Badness(shape_change, frame_index)
+
             # How much did this track move X and Y since the previous frame?
             dx = marker.co[0] - previous_marker.co[0]
             dy = marker.co[1] - previous_marker.co[1]
@@ -312,12 +380,14 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
             ddx_list.append(TrackWithFloat(track, ddx, frame_index))
             ddy_list.append(TrackWithFloat(track, ddy, frame_index))
 
-        update_badnesses(badnesses, dx_list)
-        update_badnesses(badnesses, dy_list)
-        update_badnesses(badnesses, ddx_list)
-        update_badnesses(badnesses, ddy_list)
+        update_badnesses(dx_badnesses, dx_list)
+        update_badnesses(dy_badnesses, dy_list)
+        update_badnesses(ddx_badnesses, ddx_list)
+        update_badnesses(ddy_badnesses, ddy_list)
 
-    return badnesses
+    return combine_badnesses(
+        dx_badnesses, dy_badnesses, ddx_badnesses, ddy_badnesses, shape_badnesses
+    )
 
 
 def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
@@ -368,6 +438,12 @@ def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
 
     # Return the track pairs that come close enough at some point
     return filter(lambda dup: dup.are_dups(), dups.values())
+
+
+def get_active_clip(context: bpy.types.Context):
+    spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
+    active = cast(bpy.types.SpaceClipEditor, spaces.active)
+    return active.clip
 
 
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):
