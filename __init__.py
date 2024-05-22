@@ -391,7 +391,6 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
 
 
 def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
-
     # For each clip frame...
     first_frame_index = clip.frame_start
     last_frame_index = clip.frame_start + clip.frame_duration - 1
