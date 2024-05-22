@@ -1,3 +1,5 @@
+[![tox](https://github.com/walles/find_bad_motion_tracks/actions/workflows/main.yml/badge.svg)](https://github.com/walles/find_bad_motion_tracks/actions/workflows/main.yml)
+
 # Find Bad Motion Tracks
 
 This is a [Blender](https://blender.org)
