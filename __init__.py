@@ -32,7 +32,7 @@ bl_info = {
     "name": "Find Bad Tracks",
     "author": "Johan Walles",
     "description": "Highlight motion tracks that move in suspicious directions",
-    "blender": (2, 93, 1),
+    "blender": (4, 1, 1),
     "version": (0, 0, 1),
     "location": "Clip Editor > Tools > Track > Find Bad Tracks",
     "warning": "",
