@@ -3,6 +3,10 @@
 # https://sipb.mit.edu/doc/safe-shell/
 set -euf -o pipefail
 
+FIXME: This script should create a .zip file
+FIXME: This script should bump the version numbers in both the manifest file and the .py file before packaging
+FIXME: This script should prompt for uploading to https://extensions.blender.org
+
 echo "## Old version numbers:"
 git tag | cat
 echo
