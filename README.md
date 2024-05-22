@@ -12,6 +12,8 @@ Basically, if all tracks move to the right, except one that moves to the left,
 then the single track moving to the left is likely wrong and should be evaluated
 by a human.
 
+![Example usage](example.png 'Example usage')
+
 ## Installation Instructions
 
 1. Go to the [latest release download page](https://github.com/walles/find_bad_motion_tracks/releases/latest)
@@ -53,8 +55,6 @@ by a human.
    Clicking a track pair in this list will take you to a frame where the tracks
    overlap. Stepping a few frames left or right will show you if the tracks
    start diverging. If they do, (at least) one of the tracks are likely bad!
-
-![Example usage](example.png 'Example usage')
 
 # Comparison to Built-in Functionality
 
