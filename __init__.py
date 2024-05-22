@@ -171,6 +171,9 @@ class TRACKING_UL_BadnessItem(bpy.types.UIList):
         index: int | None = 0,
         flt_flag: int | None = 0,
     ):
+        if item is None:
+            return
+
         # Experiments show that the item is of class BadnessItem
         badnessItem = cast(BadnessItem, item)
 
@@ -195,6 +198,9 @@ class TRACKING_UL_DuplicateItem(bpy.types.UIList):
         index: int | None = 0,
         flt_flag: int | None = 0,
     ):
+        if item is None:
+            return
+
         duplicateItem = cast(DuplicateItem, item)
         layout.label(text=f"{duplicateItem.track1_name} & {duplicateItem.track2_name}")
 
