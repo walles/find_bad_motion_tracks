@@ -161,15 +161,15 @@ class DuplicateItem(bpy.types.PropertyGroup):
 class TRACKING_UL_BadnessItem(bpy.types.UIList):
     def draw_item(
         self,
-        context: Context,
+        context: Context | None,
         layout: UILayout,
-        data: AnyType,
-        item: AnyType,
-        icon: int,
+        data: AnyType | None,
+        item: AnyType | None,
+        icon: int | None,
         active_data: AnyType,
         active_property: str,
-        index: int = 0,
-        flt_flag: int = 0,
+        index: int | None = 0,
+        flt_flag: int | None = 0,
     ):
         # Experiments show that the item is of class BadnessItem
         badnessItem = cast(BadnessItem, item)
@@ -185,15 +185,15 @@ class TRACKING_UL_BadnessItem(bpy.types.UIList):
 class TRACKING_UL_DuplicateItem(bpy.types.UIList):
     def draw_item(
         self,
-        context: Context,
+        context: Context | None,
         layout: UILayout,
-        data: AnyType,
-        item: AnyType,
-        icon: int,
+        data: AnyType | None,
+        item: AnyType | None,
+        icon: int | None,
         active_data: AnyType,
         active_property: str,
-        index: int = 0,
-        flt_flag: int = 0,
+        index: int | None = 0,
+        flt_flag: int | None = 0,
     ):
         duplicateItem = cast(DuplicateItem, item)
         layout.label(text=f"{duplicateItem.track1_name} & {duplicateItem.track2_name}")
