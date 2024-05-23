@@ -26,7 +26,8 @@ website = "https://github.com/walles/find_bad_motion_tracks"
 # https://docs.blender.org/manual/en/dev/extensions/tags.html
 tags = ["Tracking"]
 
-blender_version_min = "4.1.1"
+# Must be at least "4.2.0" to go onto extensions.blender.org.
+blender_version_min = "4.2.0"
 # Optional: maximum supported Blender version
 # blender_version_max = "5.1.0"
 
