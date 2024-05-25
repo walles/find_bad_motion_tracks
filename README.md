@@ -92,6 +92,15 @@ I have developed this with:
 - The [Fake Blender Python API module collection](https://github.com/nutti/fake-bpy-module) in a virtualenv
 - Blender 2.93.1
 
+### Icon
+
+The [`icon.xcf`](icon.xcf) file can be edited with [GIMP](https://gimp.org). If you do, please export any
+changes to [`icon.png`](icon.png) as well.
+
+The film noise is from <https://www.deviantart.com/schokcc/art/Noisy-Black-Texture-3-348635376>.
+
+![Icon](icon.png)
+
 ## Making a New Release
 
 1. Make sure the screenshot and description ^ are both up to date and in sync.
