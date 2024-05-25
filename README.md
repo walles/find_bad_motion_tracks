@@ -94,10 +94,8 @@ I have developed this with:
 
 ### Icon
 
-The [`icon.xcf`](icon.xcf) file can be edited with [GIMP](https://gimp.org). If you do, please export any
-changes to [`icon.png`](icon.png) as well.
-
-The film noise is from <https://www.deviantart.com/schokcc/art/Noisy-Black-Texture-3-348635376>.
+To edit the icon, first update [`icon.blend`](icon.blend). Then render the
+updated icon into [`icon.png`](icon.png).
 
 ![Icon](icon.png)
 
