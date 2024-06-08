@@ -28,19 +28,6 @@ from bpy.types import (
 )
 from bpy.types import UILayout, Context, AnyType
 
-bl_info = {
-    "name": "Find Bad Tracks",
-    "author": "Johan Walles",
-    "description": "Highlight motion tracks that move in suspicious directions",
-    "blender": (4, 1, 1),
-    "version": (0, 0, 1),
-    "location": "Clip Editor > Tools > Track > Find Bad Tracks",
-    "warning": "",
-    "doc_url": "https://github.com/walles/find_bad_motion_tracks#usage-instructions",
-    "tracker_url": "https://github.com/walles/find_bad_motion_tracks/issues",
-    "category": "Video Tools",
-}
-
 FIND_BAD_TRACKS = "Find Bad Tracks"
 
 # If two points are further apart than this many percent of the image dimensions
