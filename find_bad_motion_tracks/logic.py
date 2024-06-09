@@ -13,9 +13,15 @@
 
 from dataclasses import dataclass
 
+from typing import Optional
+
 from bpy.types import (
     MovieTrackingTrack,
 )
+
+# If two points are further apart than this many percent of the image dimensions
+# they are not dups (at least not in this frame).
+DUP_MAXDIST_PERCENT = 0.5
 
 
 @dataclass
@@ -29,3 +35,50 @@ class TrackWithFloat:
 class Badness:
     amount: float
     frame: int
+
+
+class Duplicate:
+    dup_maxdist_fraction = DUP_MAXDIST_PERCENT / 100.0
+    dup_maxdist2 = dup_maxdist_fraction * dup_maxdist_fraction
+
+    def __init__(
+        self, track1_name: str, track2_name: str, frame_number: int, distance2: float
+    ) -> None:
+        self.track1_name = track1_name
+        self.track2_name = track2_name
+        self.maxdist2 = distance2
+
+        self.first_common_frame = frame_number
+        self.last_common_frame = frame_number
+
+        self.first_overlapping_frame: Optional[int] = None
+        self.last_overlapping_frame: Optional[int] = None
+
+        self.update(frame_number, distance2)
+
+    def update(self, frame_number: int, distance2: float) -> None:
+        if distance2 > self.maxdist2:
+            self.maxdist2 = distance2
+
+        self.last_common_frame = frame_number
+
+        if distance2 > Duplicate.dup_maxdist2:
+            return
+
+        # Tracks are overlapping
+        if self.first_overlapping_frame is None:
+            self.first_overlapping_frame = frame_number
+        self.last_overlapping_frame = frame_number
+
+    def are_dups(self) -> bool:
+        return self.first_overlapping_frame is not None
+
+    def most_interesting_frame(self) -> int:
+        assert self.first_overlapping_frame is not None
+        assert self.last_overlapping_frame is not None
+
+        if self.last_overlapping_frame < self.last_common_frame:
+            # We stop overlapping and drift apart
+            return self.last_overlapping_frame
+
+        return self.first_overlapping_frame
