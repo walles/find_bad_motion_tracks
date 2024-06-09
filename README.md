@@ -85,6 +85,31 @@ committing / PRing:
 tox
 ```
 
+### Testing Locally in Blender
+
+These are first-time instructions. For the second go, you can just regenerate
+the plugin and install it from disk again in the Blender Preferences. This will
+replace the currently installed version with the new one.
+
+1. `./package-versioned-zip.sh 99.99.99`
+1. Start Blender and pick "VFX" under "New File"
+1. Install the addon from `find-bad-motion-tracks-99_99_99.zip`:
+   - Edit ->
+   - Preferences ->
+   - Extensions ->
+   - Click the unlabeled Extension Settings dropdown button on the right ->
+   - Install from Disk ->
+1. Make some tracks to test with
+   1. In the Motion Tracking workspace (you should already be there), click the
+      Open button in the middle of the screen and load some video clip
+   1. Click the "Detect Features" button on the left
+   1. Under Track, click the "Track the selected markers forward for the entire
+      clip" button
+1. Scroll down to the Find Bad Tracks section and click the "Find Bad Tracks"
+   button
+
+### Development Environment
+
 I have developed this with:
 
 - [Visual Studio Code](https://code.visualstudio.com/) with its [Blender Development
