@@ -26,9 +26,8 @@ trap 'rm -rf ${WORKDIR}' EXIT
 # Create the zip file
 UNDERSCORE_VERSION=$(echo "$VERSION" | tr . _)
 ZIPNAME="${PWD}/find-bad-motion-tracks-${UNDERSCORE_VERSION}.zip"
-mkdir "${WORKDIR}/find_bad_motion_tracks"
+cp -a find_bad_motion_tracks "${WORKDIR}/"
 sed "s/^version = .*/version = \"${VERSION}\"/" <blender_manifest.toml >"${WORKDIR}/find_bad_motion_tracks/blender_manifest.toml"
-cp ./*.py "${WORKDIR}/find_bad_motion_tracks/"
 pushd "${WORKDIR}" >/dev/null
 zip -r "${ZIPNAME}" "find_bad_motion_tracks" >/dev/null
 popd >/dev/null
