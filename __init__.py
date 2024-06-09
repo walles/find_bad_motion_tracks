@@ -272,12 +272,10 @@ def shape_change_amount(
     dx = 0.0
     dy = 0.0
     for i in range(0, 4):
-        # # type ignore because of:
-        # https://github.com/nutti/fake-bpy-module/issues/95
-        previous_x: float = previous_marker.pattern_corners[i][0]  # type: ignore
-        previous_y: float = previous_marker.pattern_corners[i][1]  # type: ignore
-        x: float = marker.pattern_corners[i][0]  # type: ignore
-        y: float = marker.pattern_corners[i][1]  # type: ignore
+        previous_x: float = previous_marker.pattern_corners[i][0]
+        previous_y: float = previous_marker.pattern_corners[i][1]
+        x: float = marker.pattern_corners[i][0]
+        y: float = marker.pattern_corners[i][1]
         dx += abs(x - previous_x)
         dy += abs(y - previous_y)
 
