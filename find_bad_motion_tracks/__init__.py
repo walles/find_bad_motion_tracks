@@ -17,16 +17,19 @@ import operator
 import statistics
 
 from typing import Iterable, cast, List, Dict, Optional, Tuple
-from dataclasses import dataclass
 
 from bpy.types import (
+    AnyType,
+    bpy_prop_collection,
+    Context,
     MovieClip,
     MovieTrackingMarker,
     MovieTrackingMarkers,
     MovieTrackingTrack,
-    bpy_prop_collection,
+    UILayout,
 )
-from bpy.types import UILayout, Context, AnyType
+
+from .logic import TrackWithFloat, Badness
 
 FIND_BAD_TRACKS = "Find Bad Tracks"
 
@@ -36,19 +39,6 @@ DUP_MAXDIST_PERCENT = 0.5
 
 # Anything within this percentile will get a badness score <= 1
 PERCENTILE = 80
-
-
-@dataclass
-class TrackWithFloat:
-    track: MovieTrackingTrack
-    number: float
-    blame_frame: int
-
-
-@dataclass
-class Badness:
-    amount: float
-    frame: int
 
 
 class Duplicate:
