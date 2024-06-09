@@ -26,7 +26,7 @@ from bpy.types import (
     UILayout,
 )
 
-from .logic import get_active_clip, find_bad_tracks, find_duplicate_tracks
+from .logic import find_bad_tracks, find_duplicate_tracks
 
 FIND_BAD_TRACKS = "Find Bad Tracks"
 
@@ -123,6 +123,12 @@ class TRACKING_UL_DuplicateItem(bpy.types.UIList):
 
         duplicateItem = cast(DuplicateItem, item)
         layout.label(text=f"{duplicateItem.track1_name} & {duplicateItem.track2_name}")
+
+
+def get_active_clip(context: bpy.types.Context):
+    spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
+    active = cast(bpy.types.SpaceClipEditor, spaces.active)
+    return active.clip
 
 
 class OP_Tracking_find_bad_tracks(bpy.types.Operator):

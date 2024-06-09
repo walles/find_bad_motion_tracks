@@ -11,7 +11,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import bpy
 import statistics
 
 from dataclasses import dataclass
@@ -329,9 +328,3 @@ def find_duplicate_tracks(clip: MovieClip) -> Iterable[Duplicate]:
 
     # Return the track pairs that come close enough at some point
     return filter(lambda dup: dup.are_dups(), dups.values())
-
-
-def get_active_clip(context: bpy.types.Context):
-    spaces = cast(bpy.types.AreaSpaces, context.area.spaces)
-    active = cast(bpy.types.SpaceClipEditor, spaces.active)
-    return active.clip
