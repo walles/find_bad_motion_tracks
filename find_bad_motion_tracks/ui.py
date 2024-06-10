@@ -367,6 +367,18 @@ def on_switch_active_duplicate_tracks(
     context.scene.frame_set(dup_item.frame)
 
 
+#
+# The "# pyright" comments below are workarounds for MovieClip having incomplete
+# type annotations. Not reported (at least not by me), but what I believe would
+# be the right solution here would be to add __getattr__ and __setattr__
+# overrides to MovieClip, as described here:
+#
+# https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html#classes
+#
+# Or I'm just doing this wrong.
+#
+
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -375,14 +387,14 @@ def register():
     #
     # Options and overrides are documented here:
     # https://github.com/dfelinto/blender/blob/master/source/blender/python/intern/bpy_props.c
-    bpy.types.MovieClip.bad_tracks = bpy.props.CollectionProperty(
+    bpy.types.MovieClip.bad_tracks = bpy.props.CollectionProperty(  # pyright: ignore [reportAttributeAccessIssue]
         type=BadnessItem,
         name="Bad Tracks",
         description="List of tracks sorted by badness score",
         options={"SKIP_SAVE"},
     )
 
-    bpy.types.MovieClip.active_bad_track = bpy.props.IntProperty(
+    bpy.types.MovieClip.active_bad_track = bpy.props.IntProperty(  # pyright: ignore [reportAttributeAccessIssue]
         name="Active Bad Track",
         description="Index of the currently active bad track",
         default=0,
@@ -390,14 +402,14 @@ def register():
         update=on_switch_active_bad_track,
     )
 
-    bpy.types.MovieClip.duplicate_tracks = bpy.props.CollectionProperty(
+    bpy.types.MovieClip.duplicate_tracks = bpy.props.CollectionProperty(  # pyright: ignore [reportAttributeAccessIssue]
         type=DuplicateItem,
         name="Duplicate Tracks",
         description="List of duplicate tracks",
         options={"SKIP_SAVE"},
     )
 
-    bpy.types.MovieClip.active_duplicate_tracks = bpy.props.IntProperty(
+    bpy.types.MovieClip.active_duplicate_tracks = bpy.props.IntProperty(  # pyright: ignore [reportAttributeAccessIssue]
         name="Active Duplicate Tracks Pair",
         description="Index of the currently active duplicate tracks pair",
         default=0,
@@ -411,7 +423,7 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
     # Clear properties.
-    del bpy.types.MovieClip.bad_tracks
-    del bpy.types.MovieClip.active_bad_track
-    del bpy.types.MovieClip.duplicate_tracks
-    del bpy.types.MovieClip.active_duplicate_tracks
+    del bpy.types.MovieClip.bad_tracks  # pyright: ignore [reportAttributeAccessIssue]
+    del bpy.types.MovieClip.active_bad_track  # pyright: ignore [reportAttributeAccessIssue]
+    del bpy.types.MovieClip.duplicate_tracks  # pyright: ignore [reportAttributeAccessIssue]
+    del bpy.types.MovieClip.active_duplicate_tracks  # pyright: ignore [reportAttributeAccessIssue]
