@@ -11,6 +11,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+#
+# This file contains all UI related code.
+#
+
 import bpy
 import time
 import operator
@@ -26,7 +30,8 @@ from bpy.types import (
     UILayout,
 )
 
-from .logic import find_bad_tracks, find_duplicate_tracks
+from .find_bad_tracks import find_bad_tracks
+from .find_duplicate_tracks import find_duplicate_tracks
 
 FIND_BAD_TRACKS = "Find Bad Tracks"
 
