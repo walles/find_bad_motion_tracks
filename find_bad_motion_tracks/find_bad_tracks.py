@@ -21,7 +21,6 @@ from bpy.types import (
     MovieClip,
     MovieTrackingTrack,
     MovieTrackingMarker,
-    MovieTrackingMarkers,
 )
 
 
@@ -186,13 +185,11 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
 
         tracks = cast(List[MovieTrackingTrack], clip.tracking.tracks)
         for track in tracks:
-            markers = cast(MovieTrackingMarkers, track.markers)
-
-            previous_marker = markers.find_frame(frame_index - 1)
+            previous_marker = track.markers.find_frame(frame_index - 1)
             if previous_marker is None or previous_marker.mute:
                 continue
 
-            marker = markers.find_frame(frame_index)
+            marker = track.markers.find_frame(frame_index)
             if marker is None or marker.mute:
                 continue
 
@@ -210,7 +207,7 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
             dx_list.append(TrackWithFloat(track, dx, frame_index))
             dy_list.append(TrackWithFloat(track, dy, frame_index))
 
-            previous_previous_marker = markers.find_frame(frame_index - 2)
+            previous_previous_marker = track.markers.find_frame(frame_index - 2)
             if previous_previous_marker is None or previous_previous_marker.mute:
                 continue
 
