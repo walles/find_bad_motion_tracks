@@ -62,15 +62,16 @@ class BadnessCalculator:
         )[percentile_index]
 
         self.median = median
-        self.distance = distance
+        self.distance = distance  # How far tracks generally deviate from the median
 
     def compute_badness_score(self, movement: TrackWithFloat) -> float:
         # Figure out how much this track moved compared to the median and the
         # movement wiggle room.
-        if self.distance == 0:
-            return 0.0
+        distance = self.distance
+        if distance < 1.0:
+            distance = 1.0
 
-        return abs(movement.number - self.median) / self.distance
+        return abs(movement.number - self.median) / distance
 
 
 def update_badnesses(
