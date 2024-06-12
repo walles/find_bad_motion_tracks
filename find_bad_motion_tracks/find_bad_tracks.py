@@ -156,7 +156,9 @@ def combine_badnesses(*args: Dict[str, Badness]) -> Dict[str, Badness]:
             if to_beat is not None:
                 to_beat_amount = to_beat.amount
 
-            adjusted_amount = badness.amount / percentile
+            adjusted_amount = badness.amount
+            if percentile != 0:
+                adjusted_amount = badness.amount / percentile
             if adjusted_amount > to_beat_amount:
                 combined[track] = Badness(adjusted_amount, badness.frame)
 
