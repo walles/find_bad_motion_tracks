@@ -11,7 +11,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from .ui import register
+from .ui import register, unregister as ui_unregister
+
+
+def unregister():
+    """
+    Without this function here unloading the plugin doesn't work.
+    """
+    ui_unregister()
+
 
 if __name__ == "__main__":
     register()
