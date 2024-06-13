@@ -77,6 +77,36 @@ def test_find_bad_tracks_all_good() -> None:
     }
 
 
+def test_find_bad_tracks_with_shape_change() -> None:
+    clip = make_clip()
+
+    # Originally [-1, -1]
+    cast(TestMovieTrackingMarkers, clip.tracking.tracks[0].markers).coordinates[0] = (
+        -11.0,  # Originally -1.0, this value is 10 off
+        -1.0,
+    )
+
+    assert find_bad_tracks(clip) == {
+        "Track 0": Badness(1.0, 1),  # Badness gets normalized to 1.0
+        "Track 1": Badness(0.0, 1),
+        "Track 2": Badness(0.0, 1),
+        "Track 3": Badness(0.0, 1),
+    }
+
+    # Originally [-1, -1]
+    cast(TestMovieTrackingMarkers, clip.tracking.tracks[0].markers).coordinates[0] = (
+        -1.0,
+        9.0,  # Originally -1.0, this value is 10 off
+    )
+
+    assert find_bad_tracks(clip) == {
+        "Track 0": Badness(1.0, 1),  # Badness gets normalized to 1.0
+        "Track 1": Badness(0.0, 1),
+        "Track 2": Badness(0.0, 1),
+        "Track 3": Badness(0.0, 1),
+    }
+
+
 def test_compute_badness_score() -> None:
     movingRight = TrackWithFloat(MovieTrackingTrack(), 10.0, 1)
     movingLeft = TrackWithFloat(MovieTrackingTrack(), -10.0, 1)
