@@ -6,7 +6,9 @@ schema_version = "1.0.0"
 id = "find_bad_tracks"
 version = "0.0.1"
 name = "Find Bad Tracks"
-tagline = "Highlight motion tracking tracks that move in suspicious directions"
+
+# NOTE: The tagline can be at most 64 characters long
+tagline = "Highlight motion tracks that move in suspicious directions"
 maintainer = "Johan Walles <johan.walles@gmail.com>"
 
 type = "add-on"
