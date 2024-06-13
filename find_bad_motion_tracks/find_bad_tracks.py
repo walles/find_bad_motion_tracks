@@ -12,17 +12,14 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import statistics
-
 from dataclasses import dataclass
-
-from typing import cast, List, Dict, Tuple
+from typing import Dict, List, Tuple, cast
 
 from bpy.types import (
     MovieClip,
-    MovieTrackingTrack,
     MovieTrackingMarker,
+    MovieTrackingTrack,
 )
-
 
 # Anything within this percentile will get a badness score <= 1
 PERCENTILE = 80
@@ -57,21 +54,21 @@ class BadnessCalculator:
         # be 7, skipping the two last ones.
         percentile_index = percentile_count - 1
 
-        distance = sorted(
+        percentile_radius = sorted(
             map(lambda movement: abs(movement.number - median), movements)
         )[percentile_index]
 
         self.median = median
-        self.distance = distance  # How far tracks generally deviate from the median
+        self.percentile_radius = (
+            percentile_radius  # How far tracks generally deviate from the median
+        )
 
     def compute_badness_score(self, movement: TrackWithFloat) -> float:
-        # Figure out how much this track moved compared to the median and the
-        # movement wiggle room.
-        distance = self.distance
-        if distance < 1.0:
-            distance = 1.0
-
-        return abs(movement.number - self.median) / distance
+        """
+        Figure out how much this track moved compared to the median and the
+        movement wiggle room.
+        """
+        return abs(movement.number - self.median) / (self.percentile_radius + 1.0)
 
 
 def update_badnesses(
