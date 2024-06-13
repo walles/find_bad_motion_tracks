@@ -163,7 +163,7 @@ def combine_badnesses(*args: Dict[str, Badness]) -> Dict[str, Badness]:
             adjusted_amount = badness.amount
             if percentile != 0:
                 adjusted_amount = badness.amount / percentile
-            if adjusted_amount > to_beat_amount:
+            if adjusted_amount > to_beat_amount or track not in combined:
                 combined[track] = Badness(adjusted_amount, badness.frame)
 
     return combined
@@ -183,7 +183,7 @@ def find_bad_tracks(clip: MovieClip) -> Dict[str, Badness]:
     # Map track names to marker shape change amounts
     shape_badnesses: Dict[str, Badness] = {}
 
-    for frame_index in range(first_frame_index + 1, last_frame_index):
+    for frame_index in range(first_frame_index + 1, last_frame_index + 1):
         dx_list: List[TrackWithFloat] = []
         dy_list: List[TrackWithFloat] = []
         ddx_list: List[TrackWithFloat] = []
