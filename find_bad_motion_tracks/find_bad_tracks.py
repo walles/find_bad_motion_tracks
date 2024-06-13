@@ -112,7 +112,13 @@ def update_badnesses(
 def shape_change_amount(
     previous_marker: MovieTrackingMarker, marker: MovieTrackingMarker
 ) -> float:
-    """How much did the corners of the marker move between these frames?"""
+    """
+    How much did the corners of the marker move between these frames?
+
+    Note that the corner coordinates of each marker are defined relatively to
+    the marker's center. So if a marker moves, the corner coordinates will still
+    be the same unless the marker's shape changed as well.
+    """
     assert len(previous_marker.pattern_corners) == 4
     assert len(marker.pattern_corners) == 4
 

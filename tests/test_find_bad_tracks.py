@@ -1,9 +1,16 @@
 from typing import cast, List
 
-from bpy.types import MovieClip, MovieTracking, MovieTrackingTrack, MovieTrackingTracks
+from bpy.types import (
+    MovieClip,
+    MovieTracking,
+    MovieTrackingTrack,
+    MovieTrackingTracks,
+    MovieTrackingMarker,
+)
 
 from find_bad_motion_tracks.find_bad_tracks import (
     find_bad_tracks,
+    shape_change_amount,
     BadnessCalculator,
     TrackWithFloat,
 )
@@ -43,3 +50,17 @@ def test_compute_badness_score() -> None:
 
     assert leftScore > rightScore
     assert leftScore > 0
+
+
+def test_compute_shape_change_amount():
+    previous_marker = MovieTrackingMarker()
+    previous_marker.pattern_corners = [[0, 0], [0, 1], [1, 1], [1, 0]]
+
+    assert shape_change_amount(previous_marker, previous_marker) == 0.0
+
+    marker = MovieTrackingMarker()
+    marker.pattern_corners = [[0, 0], [0, 1], [1, 1], [1, 5]]
+
+    # The exact value here doesn't matter, but it needs to be noticeably bigger
+    # than with no marker change
+    assert shape_change_amount(previous_marker, marker) == 5.0
