@@ -68,7 +68,13 @@ class BadnessCalculator:
         Figure out how much this track moved compared to the median and the
         movement wiggle room.
         """
-        return abs(movement.number - self.median) / (self.percentile_radius + 1.0)
+        return abs(movement.number - self.median) / (
+            # Avoid division by zero by adding a small number. A lot of the
+            # movement numbers here are pixel coordinates in the 0-1 range. The
+            # idea behind 1/10k is that it should be in the same ballpark as one
+            # pixel.
+            self.percentile_radius + (1.0 / 10_000.0)
+        )
 
 
 def update_badnesses(
