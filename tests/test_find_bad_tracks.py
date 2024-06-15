@@ -18,7 +18,7 @@ from find_bad_motion_tracks.find_bad_tracks import (
 )
 
 
-class TestMovieTrackingMarkers(MovieTrackingMarkers):
+class FakeMovieTrackingMarkers(MovieTrackingMarkers):
     def __init__(self, coordinates: List[Tuple[float, float]]) -> None:
         super().__init__()
 
@@ -56,7 +56,7 @@ def make_clip() -> MovieClip:
 
         y = i * 10.0 + 10.0
         track = [(0.0 + y * 20.0, y), (10.0 + y * 20.0, y)]
-        movieTrackingTrack.markers = TestMovieTrackingMarkers(track)
+        movieTrackingTrack.markers = FakeMovieTrackingMarkers(track)
 
         movieTrackingTracks.append(movieTrackingTrack)
 
@@ -81,7 +81,7 @@ def test_find_bad_tracks_with_shape_change() -> None:
     clip = make_clip()
 
     # Originally [-1, -1]
-    cast(TestMovieTrackingMarkers, clip.tracking.tracks[0].markers).coordinates[0] = (
+    cast(FakeMovieTrackingMarkers, clip.tracking.tracks[0].markers).coordinates[0] = (
         -11.0,  # Originally -1.0, this value is 10 off
         -1.0,
     )
@@ -94,7 +94,7 @@ def test_find_bad_tracks_with_shape_change() -> None:
     }
 
     # Originally [-1, -1]
-    cast(TestMovieTrackingMarkers, clip.tracking.tracks[0].markers).coordinates[0] = (
+    cast(FakeMovieTrackingMarkers, clip.tracking.tracks[0].markers).coordinates[0] = (
         -1.0,
         9.0,  # Originally -1.0, this value is 10 off
     )
